@@ -1,0 +1,42 @@
+# Supabase local dev – https://supabase.com/docs/guides/cli/config
+
+[api]
+enabled = true
+port = 54331
+schemas = ["public", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[db]
+port = 54332
+shadow_port = 54330
+major_version = 15
+
+[db.pooler]
+enabled = false
+
+[studio]
+enabled = true
+port = 54333
+
+[inbucket]
+enabled = true
+port = 54334
+
+[storage]
+enabled = true
+
+[auth]
+enabled = true
+site_url = "http://localhost:4321"
+additional_redirect_urls = ["http://localhost:4322"]
+jwt_expiry = 3600
+enable_signup = true
+
+[auth.email]
+enable_signup = true
+double_confirm_changes = true
+enable_confirmations = false
+
+[analytics]
+enabled = false

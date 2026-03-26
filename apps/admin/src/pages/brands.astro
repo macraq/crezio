@@ -1,0 +1,20 @@
+---
+import Layout from '../layouts/Layout.astro';
+import AdminGuard from '../components/AdminGuard';
+import AdminNav from '../components/AdminNav';
+import BrandsTable from '../components/BrandsTable';
+
+const supabaseUrl = import.meta.env.PUBLIC_SUPABASE_URL ?? '';
+const supabaseAnonKey = import.meta.env.PUBLIC_SUPABASE_ANON_KEY ?? '';
+---
+
+<Layout title="Influe – Admin / Marki">
+  <AdminGuard client:load supabaseUrl={supabaseUrl} supabaseAnonKey={supabaseAnonKey}>
+    <div class="flex flex-col gap-4">
+      <AdminNav />
+      <h1 class="text-2xl font-semibold">Marki</h1>
+      <BrandsTable client:load supabaseUrl={supabaseUrl} supabaseAnonKey={supabaseAnonKey} />
+    </div>
+  </AdminGuard>
+</Layout>
+

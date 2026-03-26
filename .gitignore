@@ -1,0 +1,41 @@
+# Dependencies
+node_modules
+.pnpm-store
+
+# Build / cache
+dist
+.astro
+.turbo
+*.tsbuildinfo
+
+# Env (never commit secrets)
+.env
+.env.local
+.env.*.local
+
+# IDE
+.idea
+.vscode/*
+!.vscode/extensions.json
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Supabase
+supabase/.branches
+supabase/.temp
+
+# Test / coverage
+coverage
+.playwright
+test-results
+users_202602222147.csv
+.ai/

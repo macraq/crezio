@@ -1,0 +1,18 @@
+---
+import Layout from '../layouts/Layout.astro';
+import LoginForm from '../components/LoginForm';
+
+const supabaseUrl = import.meta.env.PUBLIC_SUPABASE_URL ?? '';
+const supabaseAnonKey = import.meta.env.PUBLIC_SUPABASE_ANON_KEY ?? '';
+---
+
+<Layout title="Influe – Admin / Logowanie">
+  <div class="flex flex-col items-center gap-4">
+    <h1 class="text-2xl font-semibold">Logowanie admina</h1>
+    <p class="text-base-content/70 max-w-lg text-center">
+      Dostęp tylko dla kont z rolą <code>profiles.account_type = 'admin'</code>.
+    </p>
+    <LoginForm client:load supabaseUrl={supabaseUrl} supabaseAnonKey={supabaseAnonKey} redirectTo="/" />
+  </div>
+</Layout>
+

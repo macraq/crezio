@@ -1,0 +1,9 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Minimal default background for admin */
+body {
+  @apply bg-base-100 text-base-content;
+}
+

@@ -1,0 +1,25 @@
+---
+import Layout from '../layouts/Layout.astro';
+import AdminGuard from '../components/AdminGuard';
+import AdminNav from '../components/AdminNav';
+
+const supabaseUrl = import.meta.env.PUBLIC_SUPABASE_URL ?? '';
+const supabaseAnonKey = import.meta.env.PUBLIC_SUPABASE_ANON_KEY ?? '';
+---
+
+<Layout title="Influe – Admin">
+  <AdminGuard client:load supabaseUrl={supabaseUrl} supabaseAnonKey={supabaseAnonKey}>
+    <div class="flex flex-col gap-4">
+      <AdminNav />
+      <div class="card bg-base-200">
+        <div class="card-body">
+          <h2 class="card-title">Panel administratora</h2>
+          <p class="text-base-content/70">
+            Wybierz sekcję: marki, influencerzy, kampanie lub logi.
+          </p>
+        </div>
+      </div>
+    </div>
+  </AdminGuard>
+</Layout>
+

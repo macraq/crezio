@@ -1,0 +1,32 @@
+---
+import '../styles/global.css';
+import AuthHeader from '../components/AuthHeader';
+
+interface Props {
+  title?: string;
+}
+const { title = 'Influe – Panel Influencera' } = Astro.props;
+
+const supabaseUrl = import.meta.env.PUBLIC_SUPABASE_URL ?? '';
+const supabaseAnonKey = import.meta.env.PUBLIC_SUPABASE_ANON_KEY ?? '';
+
+---
+<!doctype html>
+<html lang="pl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{title}</title>
+  </head>
+  <body>
+    <AuthHeader
+      client:load
+      supabaseUrl={supabaseUrl}
+      supabaseAnonKey={supabaseAnonKey}
+      loginHref="/login"
+      signupHref="/signup"
+      dashboardLabel="Panel"
+    />
+    <slot />
+  </body>
+</html>
