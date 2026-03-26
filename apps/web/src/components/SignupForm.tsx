@@ -129,7 +129,7 @@ export default function SignupForm({ supabaseUrl, supabaseAnonKey, redirectTo = 
         />
         <span className="label-text">Akceptuję <a href="/polityka-prywatnosci" className="link">politykę prywatności</a></span>
       </label>
-      <button type="submit" className="btn btn-primary" disabled={loading}>
+      <button type="submit" className="btn-crezio-gradient rounded-full" disabled={loading}>
         {loading ? 'Rejestracja…' : 'Zarejestruj się'}
       </button>
     </form>

@@ -1,6 +1,6 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
-export const ADMIN_STORAGE_KEY = 'sb-influeapp-admin-auth-token';
+export const ADMIN_STORAGE_KEY = 'sb-crezioapp-admin-auth-token';
 
 let client: SupabaseClient | null = null;
 let lastUrl: string | null = null;

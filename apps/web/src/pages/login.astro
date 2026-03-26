@@ -3,17 +3,19 @@ import Layout from '../layouts/Layout.astro';
 import LoginForm from '../components/LoginForm';
 ---
 
-<Layout title="Logowanie – Influe">
-  <main class="min-h-screen flex flex-col bg-base-200">
+<Layout title="Logowanie – crezio.app">
+  <main class="min-h-screen flex flex-col">
     <div class="flex-1 flex flex-col items-center justify-center p-6">
       <h1 class="text-2xl font-bold mb-2">Logowanie</h1>
       <p class="text-base-content/70 mb-6">Panel influencera</p>
-      <LoginForm
-        client:load
-        supabaseUrl={import.meta.env.PUBLIC_SUPABASE_URL}
-        supabaseAnonKey={import.meta.env.PUBLIC_SUPABASE_ANON_KEY}
-        redirectTo="/"
-      />
+      <div class="w-full max-w-md rounded-2xl border border-base-content/10 bg-base-100/30 p-6 shadow-sm">
+        <LoginForm
+          client:load
+          supabaseUrl={import.meta.env.PUBLIC_SUPABASE_URL}
+          supabaseAnonKey={import.meta.env.PUBLIC_SUPABASE_ANON_KEY}
+          redirectTo="/"
+        />
+      </div>
       <p class="mt-4 text-sm text-base-content/60">
         Nie masz konta? <a href="/signup" class="link">Zarejestruj się</a>
       </p>

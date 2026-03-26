@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { User } from '@supabase/supabase-js';
-import { getSupabaseBrowserClient } from '@/lib/supabaseBrowser';
+import { ADMIN_STORAGE_KEY, getSupabaseBrowserClient } from '@/lib/supabaseBrowser';
 
 interface AdminHeaderProps {
   supabaseUrl: string;
@@ -33,7 +33,7 @@ export default function AdminHeader({ supabaseUrl, supabaseAnonKey }: AdminHeade
     async function load() {
       // Preferujemy odczyt sesji z localStorage (bez Navigator Lock).
       try {
-        const raw = localStorage.getItem('sb-influeapp-admin-auth-token');
+        const raw = localStorage.getItem(ADMIN_STORAGE_KEY);
         if (raw) {
           const parsed = JSON.parse(raw) as { user?: User | null };
           const user = parsed.user ?? null;
@@ -78,7 +78,7 @@ export default function AdminHeader({ supabaseUrl, supabaseAnonKey }: AdminHeade
     <header className="navbar bg-base-200 px-4">
       <div className="flex-1">
         <a href="/" className="btn btn-ghost text-xl">
-          Influe – Admin
+          crezio.app – Admin
         </a>
       </div>
       <div className="flex-none gap-2">

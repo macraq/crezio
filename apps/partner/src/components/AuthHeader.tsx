@@ -50,7 +50,7 @@ export default function AuthHeader({
     return (
       <header className="navbar bg-base-200 px-4">
         <div className="flex-1">
-          <a href="/" className="btn btn-ghost text-xl">Influe – Marki</a>
+          <a href="/" className="btn btn-ghost text-xl">crezio.app – Marki</a>
         </div>
         <div className="flex-none gap-2">
           <span className="text-base-content/60">Ładowanie…</span>
@@ -62,7 +62,7 @@ export default function AuthHeader({
   return (
     <header className="navbar bg-base-200 px-4">
       <div className="flex-1">
-        <a href="/" className="btn btn-ghost text-xl">Influe – Marki</a>
+        <a href="/" className="btn btn-ghost text-xl">crezio.app – Marki</a>
       </div>
       <div className="flex-none gap-2">
         {user ? (

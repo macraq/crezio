@@ -3,17 +3,19 @@ import Layout from '../layouts/Layout.astro';
 import SignupForm from '../components/SignupForm';
 ---
 
-<Layout title="Rejestracja – Influe">
-  <main class="min-h-screen flex flex-col bg-base-200">
+<Layout title="Rejestracja – crezio.app">
+  <main class="min-h-screen flex flex-col">
     <div class="flex-1 flex flex-col items-center justify-center p-6">
       <h1 class="text-2xl font-bold mb-2">Rejestracja</h1>
       <p class="text-base-content/70 mb-6">Załóż konto jako influencer</p>
-      <SignupForm
-        client:load
-        supabaseUrl={import.meta.env.PUBLIC_SUPABASE_URL}
-        supabaseAnonKey={import.meta.env.PUBLIC_SUPABASE_ANON_KEY}
-        redirectTo="/"
-      />
+      <div class="w-full max-w-md rounded-2xl border border-base-content/10 bg-base-100/30 p-6 shadow-sm">
+        <SignupForm
+          client:load
+          supabaseUrl={import.meta.env.PUBLIC_SUPABASE_URL}
+          supabaseAnonKey={import.meta.env.PUBLIC_SUPABASE_ANON_KEY}
+          redirectTo="/"
+        />
+      </div>
       <p class="mt-4 text-sm text-base-content/60">
         Masz już konto? <a href="/login" class="link">Zaloguj się</a>
       </p>

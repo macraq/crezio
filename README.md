@@ -1,4 +1,4 @@
-# Influe – Influencer Marketing Platform (MVP)
+# crezio.app – Influencer Marketing Platform (MVP)
 
 Monorepo: panel influencera (web), panel marki (partner), wspólne pakiety UI/lib/hooks, Supabase (PostgreSQL + Auth + Realtime + Functions).
 

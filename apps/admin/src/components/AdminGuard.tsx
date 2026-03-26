@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { getSupabaseBrowserClient } from '@/lib/supabaseBrowser';
+import { ADMIN_STORAGE_KEY, getSupabaseBrowserClient } from '@/lib/supabaseBrowser';
 import { createClient } from '@supabase/supabase-js';
 
 interface AdminGuardProps {
@@ -47,7 +47,7 @@ export default function AdminGuard({ supabaseUrl, supabaseAnonKey, children }: A
         // Najpierw próbujemy bezlockowo: localStorage (nasz storageKey w adminie).
         // Dopiero jeśli nie ma sesji w storage, próbujemy auth.getSession() (który może timeoutować na Navigator Lock).
         try {
-          const raw = localStorage.getItem('sb-influeapp-admin-auth-token');
+          const raw = localStorage.getItem(ADMIN_STORAGE_KEY);
           if (raw) {
             const parsed = JSON.parse(raw) as { access_token?: string; user?: { id: string; email?: string | null } };
             accessToken = parsed.access_token ?? null;

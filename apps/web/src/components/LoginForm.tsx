@@ -60,7 +60,7 @@ export default function LoginForm({ supabaseUrl, supabaseAnonKey, redirectTo = '
           autoComplete="current-password"
         />
       </label>
-      <button type="submit" className="btn btn-primary" disabled={loading}>
+      <button type="submit" className="btn-crezio-gradient rounded-full" disabled={loading}>
         {loading ? 'Logowanie…' : 'Zaloguj się'}
       </button>
     </form>

@@ -48,9 +48,17 @@ export default function AuthHeader({
 
   if (!loaded) {
     return (
-      <header className="navbar bg-base-200 px-4">
+      <header className="navbar bg-transparent px-4 backdrop-blur supports-[backdrop-filter]:bg-base-100/10">
         <div className="flex-1">
-          <a href="/" className="btn btn-ghost text-xl">Influe</a>
+          <a href="/" className="btn btn-ghost text-xl normal-case gap-2">
+            <span
+              className="inline-flex h-8 w-8 items-center justify-center rounded-xl text-white bg-gradient-to-br from-primary to-secondary shadow-sm"
+              aria-hidden="true"
+            >
+              C
+            </span>
+            <span className="font-semibold tracking-tight">crezio.app</span>
+          </a>
         </div>
         <div className="flex-none gap-2">
           <span className="text-base-content/60">Ładowanie…</span>
@@ -60,9 +68,17 @@ export default function AuthHeader({
   }
 
   return (
-    <header className="navbar bg-base-200 px-4">
+    <header className="navbar bg-transparent px-4 backdrop-blur supports-[backdrop-filter]:bg-base-100/10">
       <div className="flex-1">
-        <a href="/" className="btn btn-ghost text-xl">Influe</a>
+        <a href="/" className="btn btn-ghost text-xl normal-case gap-2">
+          <span
+            className="inline-flex h-8 w-8 items-center justify-center rounded-xl text-white bg-gradient-to-br from-primary to-secondary shadow-sm"
+            aria-hidden="true"
+          >
+            C
+          </span>
+          <span className="font-semibold tracking-tight">crezio.app</span>
+        </a>
       </div>
       <div className="flex-none gap-2">
         {user ? (
@@ -76,8 +92,12 @@ export default function AuthHeader({
           </>
         ) : (
           <>
-            <a href={loginHref} className="btn btn-ghost btn-sm">Zaloguj się</a>
-            <a href={signupHref} className="btn btn-primary btn-sm">Zarejestruj się</a>
+            <a href={loginHref} className="btn btn-outline btn-sm border-base-content/40 hover:border-base-content/70">
+              Zaloguj się
+            </a>
+            <a href={signupHref} className="btn-crezio-gradient btn-sm">
+              Wypróbuj za darmo
+            </a>
           </>
         )}
       </div>

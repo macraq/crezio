@@ -1,16 +1,85 @@
 ---
 import Layout from '../layouts/Layout.astro';
 ---
-<Layout title="Influe – Influencer Marketing Platform">
-  <main class="min-h-screen flex items-center justify-center bg-base-200">
-    <div class="text-center">
-      <h1 class="text-4xl font-bold text-primary">Influe</h1>
-      <p class="mt-2 text-lg opacity-80">Panel influencera – MVP</p>
-      <p class="mt-4 text-sm text-base-content/70">Landing i dashboard w budowie</p>
-      <p class="mt-4">
-        <a href="/login" class="btn btn-primary btn-sm mr-2">Zaloguj się</a>
-        <a href="/signup" class="btn btn-outline btn-sm">Zarejestruj się</a>
+<Layout title="crezio.app – Panel Influencera">
+  <main class="min-h-[calc(100vh-4rem)] flex items-center">
+    <section class="mx-auto w-full max-w-5xl px-6 py-16 text-center">
+      <p class="inline-flex items-center gap-2 rounded-full border border-base-content/15 bg-base-100/30 px-4 py-2 text-sm text-base-content/70">
+        Dark-first SaaS dla twórców
+        <span class="badge badge-secondary badge-sm text-base-100">MVP</span>
       </p>
-    </div>
+
+      <h1 class="mt-8 text-4xl sm:text-6xl font-bold leading-tight">
+        Koniec ze zgadywaniem algorytmu.
+        <span class="block mt-2 bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+          Zacznij tworzyć z Crezio.
+        </span>
+      </h1>
+
+      <p class="mt-6 text-lg sm:text-xl text-base-content/70 max-w-3xl mx-auto">
+        Jedyna platforma AI, która analizuje Twoje zasięgi, planuje content i pisze scenariusze, które angażują.
+        Wszystko w jednym miejscu.
+      </p>
+
+      <div class="mt-10 flex flex-col sm:flex-row items-center justify-center gap-3">
+        <a href="/signup" class="btn-crezio-gradient btn-lg rounded-full px-8">
+          Dołącz do waitlisty
+        </a>
+        <a href="/login" class="btn btn-outline btn-lg rounded-full px-8 border-base-content/30 hover:border-base-content/60">
+          Zaloguj się
+        </a>
+      </div>
+
+      <div class="mt-10 text-sm text-base-content/60">
+        Zaufało nam już <span class="text-base-content font-medium">500+</span> twórców
+      </div>
+
+      <div class="mt-14 mx-auto max-w-4xl">
+        <div class="relative rounded-2xl border border-base-content/10 bg-base-100/30 p-6 text-left shadow-sm overflow-hidden">
+          <div class="absolute -top-24 -right-24 h-64 w-64 rounded-full bg-gradient-to-br from-primary/40 to-secondary/20 blur-3xl" />
+          <div class="absolute -bottom-24 -left-24 h-64 w-64 rounded-full bg-gradient-to-br from-accent/30 to-primary/20 blur-3xl" />
+
+          <div class="relative grid gap-6 md:grid-cols-3">
+            <div class="md:col-span-2">
+              <div class="text-sm text-base-content/60">Makieta interfejsu (preview)</div>
+              <div class="mt-3 h-40 sm:h-56 rounded-xl bg-base-200 border border-base-content/10" />
+              <div class="mt-4 grid grid-cols-2 gap-3">
+                <div class="rounded-xl border border-base-content/10 bg-base-100/20 p-4">
+                  <div class="text-xs text-base-content/60">Wzrost zasięgów</div>
+                  <div class="mt-2 h-10 rounded-md bg-secondary/25" />
+                </div>
+                <div class="rounded-xl border border-base-content/10 bg-base-100/20 p-4">
+                  <div class="text-xs text-base-content/60">Propozycje tematów AI</div>
+                  <div class="mt-2 h-10 rounded-md bg-primary/25" />
+                </div>
+              </div>
+            </div>
+
+            <div class="rounded-xl border border-base-content/10 bg-base-100/20 p-5">
+              <div class="text-sm font-semibold">Co dostajesz od razu</div>
+              <ul class="mt-4 space-y-2 text-sm text-base-content/70">
+                <li class="flex gap-2">
+                  <span class="text-primary">✓</span>
+                  Smart Content Builder
+                </li>
+                <li class="flex gap-2">
+                  <span class="text-secondary">✓</span>
+                  Advanced Analytics
+                </li>
+                <li class="flex gap-2">
+                  <span class="text-accent">✓</span>
+                  Unified Calendar
+                </li>
+              </ul>
+              <div class="mt-6">
+                <a class="btn btn-sm btn-outline rounded-full border-base-content/25 hover:border-base-content/60" href="/signup">
+                  Zacznij darmowy trial
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
   </main>
 </Layout>
