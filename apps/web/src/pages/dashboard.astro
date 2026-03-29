@@ -1,7 +1,6 @@
 ---
 import Layout from '../layouts/Layout.astro';
-
-const profileCompletion = 78;
+import DashboardProfileCompletion from '../components/DashboardProfileCompletion';
 
 type CardTone = 'primary' | 'secondary' | 'accent';
 
@@ -129,15 +128,11 @@ const notifications = [
         </section>
 
         <aside class="space-y-4">
-          <section class="rounded-2xl border border-base-content/10 bg-base-100/35 p-5">
-            <h2 class="text-lg font-semibold">Wypelnienie profilu</h2>
-            <p class="mt-2 text-sm text-base-content/70">
-              Pelny profil zwieksza szanse na wybor do kampanii i widocznosc w rankingach marek.
-            </p>
-            <progress class="progress progress-primary mt-4 w-full" value={profileCompletion} max="100" />
-            <p class="mt-2 text-sm font-medium">{profileCompletion}% kompletne</p>
-            <a href="/settings" class="btn btn-sm btn-outline mt-4 w-full border-base-content/25">Przejdz do ustawien</a>
-          </section>
+          <DashboardProfileCompletion
+            client:load
+            supabaseUrl={import.meta.env.PUBLIC_SUPABASE_URL ?? ''}
+            supabaseAnonKey={import.meta.env.PUBLIC_SUPABASE_ANON_KEY ?? ''}
+          />
 
           <section class="rounded-2xl border border-base-content/10 bg-base-100/35 p-5">
             <h2 class="text-lg font-semibold">Powiadomienia</h2>

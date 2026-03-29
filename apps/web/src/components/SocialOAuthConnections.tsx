@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { createClient } from '@supabase/supabase-js';
-import type { User } from '@supabase/supabase-js';
+import type { SupabaseClient, User } from '@supabase/supabase-js';
 
 export interface OAuthConnection {
   id: string;
@@ -67,7 +67,7 @@ export default function SocialOAuthConnections({ supabaseUrl, supabaseAnonKey }:
     }
   }, []);
 
-  async function loadConnections(supabase: ReturnType<typeof createClient>, profileId: string) {
+  async function loadConnections(supabase: SupabaseClient, profileId: string) {
     const { data, error } = await supabase
       .from('social_oauth_connections')
       .select('id, provider, username, expires_at')

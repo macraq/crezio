@@ -32,6 +32,13 @@ export interface InfluencerProfile {
   location: string | null;
   followers_count: number | null;
   engagement_rate: number | null;
+  /** Wzrost w cm (profil testera / beauty). */
+  height_cm: number | null;
+  hair_color: string | null;
+  /** Rodzaj włosów (długość, faktura). */
+  hair_style: string | null;
+  skin_type: string | null;
+  skin_notes: string | null;
   social_links: Record<string, string>;
   profile_completion_pct: number;
   is_premium: boolean;
