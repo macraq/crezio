@@ -85,6 +85,9 @@ export default function AuthHeader({
           <>
             <span className="text-sm text-base-content/80 hidden sm:inline">{user.email}</span>
             <a href="/dashboard" className="btn btn-ghost btn-sm">{dashboardLabel}</a>
+            <a href="/campaigns" className="btn btn-ghost btn-sm">
+              Kampanie
+            </a>
             <a href="/settings" className="btn btn-ghost btn-sm">Ustawienia</a>
             <button type="button" className="btn btn-ghost btn-sm" onClick={handleLogout}>
               Wyloguj

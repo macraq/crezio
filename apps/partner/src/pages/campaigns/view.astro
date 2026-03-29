@@ -1,0 +1,21 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import RequireAuth from '../../components/RequireAuth';
+import BrandCampaignDetailView from '../../components/BrandCampaignDetailView';
+---
+
+<Layout title="Kampania – crezio.app (Marki)">
+  <RequireAuth
+    client:load
+    supabaseUrl={import.meta.env.PUBLIC_SUPABASE_URL}
+    supabaseAnonKey={import.meta.env.PUBLIC_SUPABASE_ANON_KEY}
+    loginHref="/login"
+  />
+  <main class="brand-container relative z-10 py-8 sm:py-10">
+    <BrandCampaignDetailView
+      client:load
+      supabaseUrl={import.meta.env.PUBLIC_SUPABASE_URL ?? ''}
+      supabaseAnonKey={import.meta.env.PUBLIC_SUPABASE_ANON_KEY ?? ''}
+    />
+  </main>
+</Layout>

@@ -1,10 +1,28 @@
 import { useEffect, useMemo, useState } from 'react';
 import { createClient } from '@supabase/supabase-js';
+import type { CampaignStatus } from '@influeapp/lib';
 import RichTextEditor from './RichTextEditor';
+import { isoDateToInput, parseStoredCampaignDescription } from '../lib/parseCampaignDescription';
+
+const CAMPAIGN_STATUS_OPTIONS: { value: CampaignStatus; label: string }[] = [
+  { value: 'draft', label: 'Szkic' },
+  { value: 'active', label: 'Aktywna (widoczna dla influencerów)' },
+  { value: 'applications_closed', label: 'Zgłoszenia zamknięte' },
+  { value: 'ended', label: 'Zakończona' },
+];
+
+const VALID_STATUSES: CampaignStatus[] = ['draft', 'active', 'applications_closed', 'ended'];
+
+function normalizeCampaignStatus(raw: unknown): CampaignStatus {
+  const s = typeof raw === 'string' ? raw : 'draft';
+  return VALID_STATUSES.includes(s as CampaignStatus) ? (s as CampaignStatus) : 'draft';
+}
 
 interface CreateCampaignFormProps {
   supabaseUrl: string;
   supabaseAnonKey: string;
+  /** Strona `/campaigns/edit` — ID kampanii z `?id=` */
+  editMode?: boolean;
 }
 
 type BrandContext = {
@@ -13,7 +31,7 @@ type BrandContext = {
   subscription_tier: 'basic' | 'medium' | 'platinum';
 };
 
-export default function CreateCampaignForm({ supabaseUrl, supabaseAnonKey }: CreateCampaignFormProps) {
+export default function CreateCampaignForm({ supabaseUrl, supabaseAnonKey, editMode = false }: CreateCampaignFormProps) {
   const supabase = useMemo(() => {
     if (!supabaseUrl?.trim() || !supabaseAnonKey?.trim()) return null;
     return createClient(supabaseUrl, supabaseAnonKey);
@@ -33,6 +51,12 @@ export default function CreateCampaignForm({ supabaseUrl, supabaseAnonKey }: Cre
   const [endApplicationsDate, setEndApplicationsDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [autoStatusChange, setAutoStatusChange] = useState(true);
+  const [contentType, setContentType] = useState('barter');
+  const [campaignStatus, setCampaignStatus] = useState<CampaignStatus>('draft');
+
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [loadingCampaign, setLoadingCampaign] = useState(false);
+  const [campaignLoadError, setCampaignLoadError] = useState<string | null>(null);
 
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -53,13 +77,14 @@ export default function CreateCampaignForm({ supabaseUrl, supabaseAnonKey }: Cre
       return;
     }
 
+    const sb = supabase;
     let cancelled = false;
 
     async function loadContext() {
       setLoadingContext(true);
       setContextError(null);
 
-      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      const { data: sessionData, error: sessionError } = await sb.auth.getSession();
       if (cancelled) return;
       if (sessionError) {
         setContextError(sessionError.message);
@@ -74,7 +99,7 @@ export default function CreateCampaignForm({ supabaseUrl, supabaseAnonKey }: Cre
         return;
       }
 
-      const { data: profile, error: profileError } = await supabase
+      const { data: profile, error: profileError } = await sb
         .from('profiles')
         .select('account_type')
         .eq('id', userId)
@@ -93,7 +118,7 @@ export default function CreateCampaignForm({ supabaseUrl, supabaseAnonKey }: Cre
         return;
       }
 
-      const { data: brandRow, error: brandError } = await supabase
+      const { data: brandRow, error: brandError } = await sb
         .from('brands')
         .select('id,subscription_active,subscription_tier')
         .eq('profile_id', userId)
@@ -122,6 +147,65 @@ export default function CreateCampaignForm({ supabaseUrl, supabaseAnonKey }: Cre
     };
   }, [supabase]);
 
+  useEffect(() => {
+    if (!editMode || !supabase || !brand) return;
+
+    const sb = supabase;
+    const brandId = brand.id;
+
+    const id = new URLSearchParams(window.location.search).get('id')?.trim();
+    if (!id) {
+      setCampaignLoadError('Brak parametru id w adresie URL (?id=…).');
+      setEditingId(null);
+      return;
+    }
+
+    let cancelled = false;
+
+    async function loadCampaign() {
+      setLoadingCampaign(true);
+      setCampaignLoadError(null);
+      const { data, error } = await sb
+        .from('campaigns')
+        .select(
+          'id,name,description,units_count,content_type,category,start_date,end_applications_date,end_date,auto_status_change,status'
+        )
+        .eq('id', id)
+        .eq('brand_id', brandId)
+        .maybeSingle();
+
+      if (cancelled) return;
+      if (error || !data) {
+        setCampaignLoadError(error?.message ?? 'Nie znaleziono kampanii lub brak dostępu.');
+        setEditingId(null);
+        setLoadingCampaign(false);
+        return;
+      }
+
+      const row = data as Record<string, unknown>;
+      setEditingId(String(row.id));
+      setName(String(row.name ?? ''));
+      const parsed = parseStoredCampaignDescription(row.description == null ? null : String(row.description));
+      setProductLead(parsed.productLead);
+      setSuggestedRetailPrice(parsed.suggestedRetailPrice);
+      setDescription(parsed.htmlDescription);
+      setUnitsCount(Math.max(1, Number(row.units_count) || 1));
+      setCategory(String(row.category ?? 'beauty'));
+      setStartDate(isoDateToInput(String(row.start_date)));
+      setEndApplicationsDate(isoDateToInput(String(row.end_applications_date)));
+      setEndDate(isoDateToInput(String(row.end_date)));
+      setAutoStatusChange(Boolean(row.auto_status_change));
+      setContentType(String(row.content_type ?? 'barter'));
+      setCampaignStatus(normalizeCampaignStatus(row.status));
+      setLoadingCampaign(false);
+    }
+
+    loadCampaign();
+    return () => {
+      cancelled = true;
+    };
+  }, [editMode, supabase, brand]);
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setSubmitError(null);
@@ -132,7 +216,12 @@ export default function CreateCampaignForm({ supabaseUrl, supabaseAnonKey }: Cre
       return;
     }
 
-    if (!brand.subscription_active) {
+    if (editMode && !editingId) {
+      setSubmitError('Nie wczytano kampanii do edycji.');
+      return;
+    }
+
+    if (!editMode && !brand.subscription_active) {
       setSubmitError('Aktywny abonament jest wymagany, aby tworzyć kampanie.');
       return;
     }
@@ -172,6 +261,43 @@ export default function CreateCampaignForm({ supabaseUrl, supabaseAnonKey }: Cre
     const mergedDescription = `Lead produktu:\n${productLead.trim()}${srpLine}\n\nDokładny opis (HTML):\n${description}`;
 
     setSubmitting(true);
+
+    if (editMode && editingId) {
+      const { error } = await supabase
+        .from('campaigns')
+        .update({
+          name: name.trim(),
+          description: mergedDescription,
+          units_count: unitsCount,
+          content_type: contentType || 'barter',
+          category: category.trim() || null,
+          start_date: start.toISOString(),
+          end_applications_date: endApplications.toISOString(),
+          end_date: end.toISOString(),
+          auto_status_change: autoStatusChange,
+          status: campaignStatus,
+        })
+        .eq('id', editingId)
+        .eq('brand_id', brand.id);
+      setSubmitting(false);
+      if (error) {
+        const msg = error.message || '';
+        if (msg.includes('Campaign limit exceeded') || msg.includes('check_campaign_limit')) {
+          setSubmitError(
+            'Nie można ustawić tego statusu: przekroczony limit równoległych kampanii w pakiecie (szkic + aktywne + zamknięte zgłoszenia). Zakończ inną kampanię lub zmień pakiet.'
+          );
+        } else {
+          setSubmitError(msg);
+        }
+        return;
+      }
+      setSuccess('Zmiany zostały zapisane.');
+      setTimeout(() => {
+        window.location.href = `/campaigns/view?id=${encodeURIComponent(editingId)}`;
+      }, 900);
+      return;
+    }
+
     const { error } = await supabase.from('campaigns').insert({
       brand_id: brand.id,
       name: name.trim(),
@@ -214,11 +340,34 @@ export default function CreateCampaignForm({ supabaseUrl, supabaseAnonKey }: Cre
     );
   }
 
+  if (editMode && campaignLoadError) {
+    return (
+      <div className="space-y-4">
+        <div className="rounded-xl border border-rose-400/40 bg-rose-500/10 px-4 py-3 text-sm text-rose-200">
+          {campaignLoadError}
+        </div>
+        <a href="/dashboard" className="brand-link text-sm">
+          ← Wróć do dashboardu
+        </a>
+      </div>
+    );
+  }
+
+  if (editMode && (loadingCampaign || !editingId)) {
+    return (
+      <div className="brand-glass p-8 text-center text-sm text-slate-400">
+        Wczytywanie kampanii…
+      </div>
+    );
+  }
+
   return (
     <form onSubmit={handleSubmit} className="brand-glass p-6 sm:p-8">
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="brand-heading text-2xl font-semibold text-white">Nowa kampania</h1>
+          <h1 className="brand-heading text-2xl font-semibold text-white">
+            {editMode ? 'Edycja kampanii' : 'Nowa kampania'}
+          </h1>
           <p className="mt-1 text-sm text-slate-300">
             Pakiet: <span className="font-medium text-white">{brand?.subscription_tier.toUpperCase()}</span>
           </p>
@@ -247,6 +396,27 @@ export default function CreateCampaignForm({ supabaseUrl, supabaseAnonKey }: Cre
       )}
 
       <div className="grid gap-4 sm:grid-cols-2">
+        {editMode ? (
+          <label className="sm:col-span-2 flex flex-col gap-1.5">
+            <span className="text-sm text-slate-300">Status kampanii</span>
+            <select
+              className="w-full max-w-md rounded-xl border border-white/15 bg-slate-900/70 px-3 py-2.5 text-sm text-white outline-none transition focus:border-emerald-300/70 focus:ring-2 focus:ring-emerald-300/20"
+              value={campaignStatus}
+              onChange={(e) => setCampaignStatus(normalizeCampaignStatus(e.target.value))}
+            >
+              {CAMPAIGN_STATUS_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
+            </select>
+            <span className="text-xs text-slate-500">
+              Ręczna zmiana statusu. Statusy „aktywne” (szkic, aktywna, zgłoszenia zamknięte) liczą się do limitu
+              kampanii w pakiecie — przy przekroczeniu zapis się nie powiedzie.
+            </span>
+          </label>
+        ) : null}
+
         <label className="sm:col-span-2 flex flex-col gap-1.5">
           <span className="text-sm text-slate-300">Nazwa kampanii *</span>
           <input
@@ -359,11 +529,20 @@ export default function CreateCampaignForm({ supabaseUrl, supabaseAnonKey }: Cre
 
       <div className="mt-6 flex flex-col gap-3 sm:flex-row">
         <button type="submit" className="brand-cta w-full sm:w-auto disabled:cursor-not-allowed disabled:opacity-60" disabled={submitting}>
-          {submitting ? 'Zapisywanie...' : 'Utwórz kampanię'}
+          {submitting ? 'Zapisywanie...' : editMode ? 'Zapisz zmiany' : 'Utwórz kampanię'}
         </button>
-        <a href="/dashboard" className="brand-cta-outline w-full sm:w-auto text-center">
-          Anuluj
-        </a>
+        {editMode && editingId ? (
+          <a
+            href={`/campaigns/view?id=${encodeURIComponent(editingId)}`}
+            className="brand-cta-outline w-full sm:w-auto text-center"
+          >
+            Anuluj
+          </a>
+        ) : (
+          <a href="/dashboard" className="brand-cta-outline w-full sm:w-auto text-center">
+            Anuluj
+          </a>
+        )}
       </div>
     </form>
   );

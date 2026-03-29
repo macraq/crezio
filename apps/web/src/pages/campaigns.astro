@@ -1,0 +1,28 @@
+---
+import Layout from '../layouts/Layout.astro';
+import InfluencerCampaignList from '../components/InfluencerCampaignList';
+---
+
+<Layout title="Kampanie – crezio.app">
+  <main class="min-h-[calc(100vh-4rem)] px-4 py-8 sm:px-6">
+    <div class="mx-auto w-full max-w-4xl space-y-6">
+      <header class="space-y-2">
+        <h1 class="text-3xl font-bold">Produkty do testów</h1>
+        <p class="max-w-2xl text-base-content/75">
+          Przeglądaj dostępne produkty do testów i zgłaszaj się do testów. Filtruj po kategorii i
+          typie treści.
+        </p>
+      </header>
+
+      <InfluencerCampaignList
+        client:load
+        supabaseUrl={import.meta.env.PUBLIC_SUPABASE_URL ?? ''}
+        supabaseAnonKey={import.meta.env.PUBLIC_SUPABASE_ANON_KEY ?? ''}
+      />
+
+      <p class="text-center text-sm text-base-content/55">
+        <a href="/dashboard" class="link link-hover">← Wróć do panelu</a>
+      </p>
+    </div>
+  </main>
+</Layout>

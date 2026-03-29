@@ -4,9 +4,10 @@ import tailwind from '@astrojs/tailwind';
 
 export default defineConfig({
   integrations: [react(), tailwind()],
-  output: 'static',
+  output: 'hybrid',
   server: { port: 4322 },
-  vite: {    envPrefix: ['PUBLIC_', 'VITE_'],
+  vite: {
+    envPrefix: ['PUBLIC_', 'VITE_'],
     resolve: {
       alias: { '@': new URL('./src', import.meta.url).pathname },
     },

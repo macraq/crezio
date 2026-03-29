@@ -1,58 +1,9 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import RequireAuth from '../components/RequireAuth';
-
-const currentPlan = 'Medium';
-const campaignLimit = 3;
-const activeCampaigns = 2;
-const pendingApplications = 34;
-const selectedInfluencers = 12;
-const completedCampaigns = 5;
-
-const campaigns = [
-  {
-    name: 'Spring Glow Test Box',
-    type: 'UGC Reels + Stories',
-    status: 'Aktywna',
-    applications: 21,
-    selected: 8,
-    deadline: '31.03.2026',
-    autoStatus: true,
-  },
-  {
-    name: 'Skin Barrier Reset',
-    type: 'TikTok + Recenzja',
-    status: 'Zbieranie zgłoszeń',
-    applications: 13,
-    selected: 4,
-    deadline: '04.04.2026',
-    autoStatus: false,
-  },
-];
-
-const newestApplications = [
-  {
-    handle: '@kasia.beauty',
-    followers: '18.4k',
-    er: '6.2%',
-    campaign: 'Spring Glow Test Box',
-    status: 'Nowe zgłoszenie',
-  },
-  {
-    handle: '@ania.skinlab',
-    followers: '9.1k',
-    er: '7.1%',
-    campaign: 'Skin Barrier Reset',
-    status: 'Do wyboru',
-  },
-  {
-    handle: '@marta.dailycare',
-    followers: '25.3k',
-    er: '5.4%',
-    campaign: 'Spring Glow Test Box',
-    status: 'Wybrana',
-  },
-];
+import BrandDashboardCampaigns from '../components/BrandDashboardCampaigns';
+import BrandDashboardKpi from '../components/BrandDashboardKpi';
+import BrandDashboardRecentApplications from '../components/BrandDashboardRecentApplications';
 ---
 <Layout title="Dashboard – crezio.app (Marki)">
   <RequireAuth
@@ -78,80 +29,24 @@ const newestApplications = [
       </div>
     </section>
 
-    <section class="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-      <article class="brand-glass p-4">
-        <p class="text-xs uppercase tracking-wider text-slate-400">Pakiet</p>
-        <p class="mt-2 text-xl font-semibold text-white">{currentPlan}</p>
-        <p class="mt-1 text-sm text-slate-300">Limit kampanii: {activeCampaigns}/{campaignLimit}</p>
-      </article>
-      <article class="brand-glass p-4">
-        <p class="text-xs uppercase tracking-wider text-slate-400">Zgłoszenia</p>
-        <p class="mt-2 text-xl font-semibold text-white">{pendingApplications}</p>
-        <p class="mt-1 text-sm text-slate-300">Nowe i w trakcie selekcji</p>
-      </article>
-      <article class="brand-glass p-4">
-        <p class="text-xs uppercase tracking-wider text-slate-400">Wybrani influencerzy</p>
-        <p class="mt-2 text-xl font-semibold text-white">{selectedInfluencers}</p>
-        <p class="mt-1 text-sm text-slate-300">W statusie przygotowanie do wysyłki</p>
-      </article>
-      <article class="brand-glass p-4">
-        <p class="text-xs uppercase tracking-wider text-slate-400">Zakończone kampanie</p>
-        <p class="mt-2 text-xl font-semibold text-white">{completedCampaigns}</p>
-        <p class="mt-1 text-sm text-slate-300">Gotowe do eksportu raportów PDF</p>
-      </article>
-    </section>
+    <BrandDashboardKpi
+      client:load
+      supabaseUrl={import.meta.env.PUBLIC_SUPABASE_URL}
+      supabaseAnonKey={import.meta.env.PUBLIC_SUPABASE_ANON_KEY}
+    />
 
     <section class="mt-5 grid gap-5 xl:grid-cols-[1.3fr_1fr]">
-      <article class="brand-glass p-5">
-        <div class="mb-4 flex items-center justify-between gap-3">
-          <h2 class="brand-heading text-lg font-semibold text-white sm:text-xl">Aktywne kampanie</h2>
-          <span class="rounded-full border border-emerald-300/30 bg-emerald-500/10 px-3 py-1 text-xs text-emerald-200">
-            {activeCampaigns}/{campaignLimit} w użyciu
-          </span>
-        </div>
-        <div class="space-y-3">
-          {
-            campaigns.map((campaign) => (
-              <div class="rounded-xl border border-white/10 bg-white/5 p-4">
-                <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                  <h3 class="text-base font-semibold text-white">{campaign.name}</h3>
-                  <span class="rounded-full border border-violet-300/30 bg-violet-500/10 px-2.5 py-1 text-xs text-violet-200">
-                    {campaign.status}
-                  </span>
-                </div>
-                <p class="mt-2 text-sm text-slate-300">{campaign.type}</p>
-                <div class="mt-3 grid gap-2 text-xs text-slate-300 sm:grid-cols-4">
-                  <span>Zgłoszenia: {campaign.applications}</span>
-                  <span>Wybrani: {campaign.selected}</span>
-                  <span>Deadline: {campaign.deadline}</span>
-                  <span>{campaign.autoStatus ? 'Auto status: TAK' : 'Auto status: NIE'}</span>
-                </div>
-              </div>
-            ))
-          }
-        </div>
-      </article>
+      <BrandDashboardCampaigns
+        client:load
+        supabaseUrl={import.meta.env.PUBLIC_SUPABASE_URL}
+        supabaseAnonKey={import.meta.env.PUBLIC_SUPABASE_ANON_KEY}
+      />
 
-      <article class="brand-glass p-5">
-        <h2 class="brand-heading text-lg font-semibold text-white sm:text-xl">Najnowsze zgłoszenia</h2>
-        <div class="mt-4 space-y-3">
-          {
-            newestApplications.map((application) => (
-              <div class="rounded-xl border border-white/10 bg-white/5 p-4">
-                <div class="flex items-center justify-between gap-3">
-                  <p class="font-medium text-white">{application.handle}</p>
-                  <span class="text-xs text-emerald-200">{application.status}</span>
-                </div>
-                <p class="mt-2 text-xs text-slate-300">{application.campaign}</p>
-                <div class="mt-2 flex gap-4 text-xs text-slate-300">
-                  <span>Followers: {application.followers}</span>
-                  <span>ER: {application.er}</span>
-                </div>
-              </div>
-            ))
-          }
-        </div>
-      </article>
+      <BrandDashboardRecentApplications
+        client:load
+        supabaseUrl={import.meta.env.PUBLIC_SUPABASE_URL}
+        supabaseAnonKey={import.meta.env.PUBLIC_SUPABASE_ANON_KEY}
+      />
     </section>
 
     <section class="mt-5 grid gap-5 lg:grid-cols-2">
