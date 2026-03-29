@@ -1,3 +1,82 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  body {
+    @apply min-h-screen bg-slate-950 text-slate-100 antialiased;
+    background-image:
+      radial-gradient(circle at 10% 10%, rgba(108, 92, 231, 0.28), transparent 36%),
+      radial-gradient(circle at 85% 20%, rgba(0, 210, 170, 0.18), transparent 30%),
+      radial-gradient(circle at 50% 100%, rgba(255, 46, 99, 0.12), transparent 40%);
+  }
+}
+
+@layer components {
+  .brand-shell {
+    @apply relative overflow-x-hidden;
+  }
+
+  .brand-shell::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: linear-gradient(120deg, rgba(108, 92, 231, 0.16), rgba(0, 210, 170, 0.08), rgba(255, 46, 99, 0.12));
+    opacity: 0.65;
+  }
+
+  .brand-container {
+    @apply relative z-10 mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8;
+  }
+
+  .brand-glass {
+    @apply rounded-2xl border border-white/10 bg-slate-900/70 backdrop-blur-sm shadow-2xl shadow-violet-900/20;
+  }
+
+  .brand-cta {
+    @apply inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-violet-500 to-emerald-400 px-5 py-2.5 text-sm font-semibold text-white transition-transform duration-200 hover:scale-[1.02] hover:shadow-[0_0_30px_rgba(255,46,99,0.25)];
+  }
+
+  .brand-cta-outline {
+    @apply inline-flex items-center justify-center rounded-xl border border-white/30 bg-white/5 px-5 py-2.5 text-sm font-semibold text-white transition-colors duration-200 hover:border-emerald-300/60 hover:bg-white/10;
+  }
+
+  .brand-link {
+    @apply text-emerald-300 underline decoration-emerald-400/40 underline-offset-4 transition-colors hover:text-emerald-200;
+  }
+
+  .wysiwyg-editor:empty::before {
+    content: attr(data-placeholder);
+    color: rgb(148 163 184 / 0.8);
+    pointer-events: none;
+  }
+
+  .wysiwyg-editor h1,
+  .wysiwyg-editor h2,
+  .wysiwyg-editor h3 {
+    margin-top: 0.5rem;
+    color: rgb(255 255 255);
+    font-family: 'Poppins', sans-serif;
+  }
+
+  .wysiwyg-editor h2 {
+    @apply text-lg font-semibold;
+  }
+
+  .wysiwyg-editor p {
+    @apply my-1;
+  }
+
+  .wysiwyg-editor ul {
+    @apply list-disc pl-6;
+  }
+
+  .wysiwyg-editor ol {
+    @apply list-decimal pl-6;
+  }
+
+  .wysiwyg-editor a {
+    @apply text-emerald-300 underline;
+  }
+}

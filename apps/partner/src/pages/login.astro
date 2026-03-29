@@ -4,19 +4,22 @@ import LoginForm from '../components/LoginForm';
 ---
 
 <Layout title="Logowanie – crezio.app (Marki)">
-  <main class="min-h-screen flex flex-col bg-base-200">
-    <div class="flex-1 flex flex-col items-center justify-center p-6">
-      <h1 class="text-2xl font-bold mb-2">Logowanie</h1>
-      <p class="text-base-content/70 mb-6">Panel marki / partnera</p>
+  <main class="brand-container relative z-10 flex min-h-[calc(100vh-4rem)] flex-col py-8">
+    <div class="flex flex-1 flex-col items-center justify-center">
+      <section class="brand-glass w-full max-w-md p-6 sm:p-8">
+        <p class="text-xs font-semibold uppercase tracking-[0.22em] text-emerald-300/90">Marka / Partner</p>
+        <h1 class="brand-heading mt-3 text-2xl font-semibold text-white">Logowanie</h1>
+        <p class="mt-2 text-sm text-slate-300">Zarządzaj kampaniami, zgłoszeniami i raportami w panelu marki.</p>
       <LoginForm
         client:load
         supabaseUrl={import.meta.env.PUBLIC_SUPABASE_URL}
         supabaseAnonKey={import.meta.env.PUBLIC_SUPABASE_ANON_KEY}
-        redirectTo="/"
+        redirectTo="/dashboard"
       />
-      <p class="mt-4 text-sm text-base-content/60">
-        Nie masz konta? <a href="/signup" class="link">Zarejestruj markę</a>
-      </p>
+        <p class="mt-5 text-sm text-slate-300">
+          Nie masz konta? <a href="/signup" class="brand-link">Zarejestruj markę</a>
+        </p>
+      </section>
     </div>
   </main>
 </Layout>

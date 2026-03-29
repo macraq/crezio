@@ -85,35 +85,35 @@ export default function SignupForm({ supabaseUrl, supabaseAnonKey, redirectTo = 
 
   if (success) {
     return (
-      <div className="alert alert-success max-w-sm">
-        <span>Konto marki utworzone. Przekierowanie…</span>
+      <div className="mt-6 rounded-lg border border-emerald-300/40 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-200">
+        <span>Konto marki utworzone. Przekierowanie...</span>
       </div>
     );
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-4 w-full max-w-sm">
+    <form onSubmit={handleSubmit} className="mt-6 flex w-full flex-col gap-4">
       {error && (
-        <div className="alert alert-error text-sm" role="alert">
+        <div className="rounded-lg border border-rose-400/40 bg-rose-500/10 px-3 py-2 text-sm text-rose-200" role="alert">
           {error}
         </div>
       )}
-      <label className="form-control w-full">
-        <span className="label-text">E-mail</span>
+      <label className="flex w-full flex-col gap-1.5">
+        <span className="text-sm text-slate-300">E-mail</span>
         <input
           type="email"
-          className="input input-bordered w-full"
+          className="w-full rounded-xl border border-white/15 bg-slate-900/70 px-3 py-2.5 text-sm text-white outline-none transition focus:border-emerald-300/70 focus:ring-2 focus:ring-emerald-300/20"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
           autoComplete="email"
         />
       </label>
-      <label className="form-control w-full">
-        <span className="label-text">Hasło</span>
+      <label className="flex w-full flex-col gap-1.5">
+        <span className="text-sm text-slate-300">Hasło</span>
         <input
           type="password"
-          className="input input-bordered w-full"
+          className="w-full rounded-xl border border-white/15 bg-slate-900/70 px-3 py-2.5 text-sm text-white outline-none transition focus:border-emerald-300/70 focus:ring-2 focus:ring-emerald-300/20"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
@@ -121,68 +121,68 @@ export default function SignupForm({ supabaseUrl, supabaseAnonKey, redirectTo = 
           autoComplete="new-password"
         />
       </label>
-      <label className="form-control w-full">
-        <span className="label-text">Powtórz hasło</span>
+      <label className="flex w-full flex-col gap-1.5">
+        <span className="text-sm text-slate-300">Powtórz hasło</span>
         <input
           type="password"
-          className="input input-bordered w-full"
+          className="w-full rounded-xl border border-white/15 bg-slate-900/70 px-3 py-2.5 text-sm text-white outline-none transition focus:border-emerald-300/70 focus:ring-2 focus:ring-emerald-300/20"
           value={confirmPassword}
           onChange={(e) => setConfirmPassword(e.target.value)}
           required
           autoComplete="new-password"
         />
       </label>
-      <label className="form-control w-full">
-        <span className="label-text">Nazwa marki *</span>
+      <label className="flex w-full flex-col gap-1.5">
+        <span className="text-sm text-slate-300">Nazwa marki *</span>
         <input
           type="text"
-          className="input input-bordered w-full"
+          className="w-full rounded-xl border border-white/15 bg-slate-900/70 px-3 py-2.5 text-sm text-white outline-none transition focus:border-emerald-300/70 focus:ring-2 focus:ring-emerald-300/20"
           value={name}
           onChange={(e) => setName(e.target.value)}
           required
           placeholder="np. Moja Marka Beauty"
         />
       </label>
-      <label className="form-control w-full">
-        <span className="label-text">Branża</span>
+      <label className="flex w-full flex-col gap-1.5">
+        <span className="text-sm text-slate-300">Branża</span>
         <input
           type="text"
-          className="input input-bordered w-full"
+          className="w-full rounded-xl border border-white/15 bg-slate-900/70 px-3 py-2.5 text-sm text-white outline-none transition focus:border-emerald-300/70 focus:ring-2 focus:ring-emerald-300/20"
           value={industry}
           onChange={(e) => setIndustry(e.target.value)}
           placeholder="np. beauty, fashion"
         />
       </label>
-      <label className="form-control w-full">
-        <span className="label-text">Kontakt (opcjonalnie)</span>
+      <label className="flex w-full flex-col gap-1.5">
+        <span className="text-sm text-slate-300">Kontakt (opcjonalnie)</span>
         <input
           type="text"
-          className="input input-bordered w-full"
+          className="w-full rounded-xl border border-white/15 bg-slate-900/70 px-3 py-2.5 text-sm text-white outline-none transition focus:border-emerald-300/70 focus:ring-2 focus:ring-emerald-300/20"
           value={contact}
           onChange={(e) => setContact(e.target.value)}
           placeholder="telefon lub inny kontakt"
         />
       </label>
-      <label className="flex gap-2 cursor-pointer">
+      <label className="flex cursor-pointer gap-2 text-sm text-slate-300">
         <input
           type="checkbox"
-          className="checkbox checkbox-sm"
+          className="mt-0.5 h-4 w-4 rounded border-white/30 bg-slate-900 text-emerald-300"
           checked={terms}
           onChange={(e) => setTerms(e.target.checked)}
         />
-        <span className="label-text">Akceptuję <a href="/regulamin" className="link">regulamin</a></span>
+        <span>Akceptuję <a href="/regulamin" className="brand-link">regulamin</a></span>
       </label>
-      <label className="flex gap-2 cursor-pointer">
+      <label className="flex cursor-pointer gap-2 text-sm text-slate-300">
         <input
           type="checkbox"
-          className="checkbox checkbox-sm"
+          className="mt-0.5 h-4 w-4 rounded border-white/30 bg-slate-900 text-emerald-300"
           checked={privacy}
           onChange={(e) => setPrivacy(e.target.checked)}
         />
-        <span className="label-text">Akceptuję <a href="/polityka-prywatnosci" className="link">politykę prywatności</a></span>
+        <span>Akceptuję <a href="/polityka-prywatnosci" className="brand-link">politykę prywatności</a></span>
       </label>
-      <button type="submit" className="btn btn-primary" disabled={loading}>
-        {loading ? 'Rejestracja…' : 'Zarejestruj markę'}
+      <button type="submit" className="brand-cta w-full disabled:cursor-not-allowed disabled:opacity-60" disabled={loading}>
+        {loading ? 'Rejestracja...' : 'Zarejestruj markę'}
       </button>
     </form>
   );

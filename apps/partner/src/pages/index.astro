@@ -1,16 +1,134 @@
 ---
 import Layout from '../layouts/Layout.astro';
+
+const painPoints = [
+  {
+    title: 'Trudny start kampanii',
+    description: 'Kampanie ruszają z opóźnieniem przez rozproszone briefy, pliki i komunikację.',
+  },
+  {
+    title: 'Brak kontroli nad zgłoszeniami',
+    description: 'Ciężko szybko wybrać właściwych twórców, gdy dane są w kilku narzędziach.',
+  },
+  {
+    title: 'Niewiarygodne podsumowania',
+    description: 'Bez spójnego procesu raportowania trudno porównać realny wynik kampanii.',
+  },
+];
+
+const features = [
+  {
+    title: 'Dashboard kampanii marki',
+    description:
+      'Przegląd aktywnych kampanii, statusów i limitów pakietu Basic / Medium / Platinum w jednym miejscu.',
+  },
+  {
+    title: 'Selekcja influencerów oparta na danych',
+    description:
+      'Lista zgłoszonych twórców z kluczowymi metrykami (followers, ER, status), gotowa do szybkiej shortlisty.',
+  },
+  {
+    title: 'Raport końcowy PDF',
+    description:
+      'Po zakończeniu kampanii generujesz raport z zasięgiem, wyświetleniami i najlepszym contentem.',
+  },
+];
 ---
 <Layout title="crezio.app – Panel Marki">
-  <main class="min-h-screen flex items-center justify-center bg-base-200">
-    <div class="text-center">
-      <h1 class="text-4xl font-bold text-primary">crezio.app</h1>
-      <p class="mt-2 text-lg opacity-80">Panel marki / partnera – MVP</p>
-      <p class="mt-4 text-sm text-base-content/70">Dashboard kampanii w budowie</p>
-      <p class="mt-4">
-        <a href="/login" class="btn btn-primary btn-sm mr-2">Zaloguj się</a>
-        <a href="/signup" class="btn btn-outline btn-sm">Zarejestruj markę</a>
+  <main class="brand-container relative z-10 py-10 sm:py-14">
+    <section class="brand-glass overflow-hidden p-8 sm:p-12">
+      <div class="grid gap-10 lg:grid-cols-[1.15fr_0.85fr] lg:items-center">
+        <div>
+          <p class="text-xs font-semibold uppercase tracking-[0.22em] text-emerald-300/90">crezio.app dla marek</p>
+          <h1 class="brand-heading mt-3 text-3xl font-bold leading-tight text-white sm:text-5xl">
+            Prowadź kampanie influencer marketingu bez chaosu
+          </h1>
+          <p class="mt-5 max-w-2xl text-sm text-slate-300 sm:text-base">
+            Platforma łączy marki i nano/mikro influencerów w modelu barterowym. Tworzysz kampanię, wybierasz
+            twórców, monitorujesz realizację i domykasz wynik raportem PDF.
+          </p>
+          <div class="mt-8 flex flex-col gap-3 sm:flex-row">
+            <a href="/signup" class="brand-cta w-full sm:w-auto">Załóż konto marki</a>
+            <a href="/dashboard" class="brand-cta-outline w-full sm:w-auto">Zobacz dashboard</a>
+          </div>
+          <p class="mt-4 text-xs text-slate-400">Pilot MVP: branża beauty, start na rynku PL, gotowość pod skalowanie i i18n.</p>
+        </div>
+        <div class="rounded-2xl border border-white/10 bg-slate-900/75 p-5">
+          <p class="text-xs uppercase tracking-wider text-slate-400">W skrócie</p>
+          <ul class="mt-4 space-y-3 text-sm text-slate-200">
+            <li class="rounded-xl border border-white/10 bg-white/5 px-3 py-2">Tworzenie kampanii z datami i statusem</li>
+            <li class="rounded-xl border border-white/10 bg-white/5 px-3 py-2">Wybór influencerów i status wysyłki</li>
+            <li class="rounded-xl border border-white/10 bg-white/5 px-3 py-2">Podgląd publikacji i raport końcowy PDF</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="mt-6">
+      <div class="mb-4">
+        <p class="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-300/90">Problem i rozwiązanie</p>
+        <h2 class="brand-heading mt-2 text-2xl font-semibold text-white sm:text-3xl">Brzmi znajomo?</h2>
+      </div>
+      <div class="grid gap-4 md:grid-cols-3">
+        {
+          painPoints.map((item) => (
+            <article class="brand-glass p-5">
+              <h3 class="text-base font-semibold text-white">{item.title}</h3>
+              <p class="mt-2 text-sm text-slate-300">{item.description}</p>
+            </article>
+          ))
+        }
+      </div>
+    </section>
+
+    <section class="mt-6">
+      <div class="mb-4">
+        <p class="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-300/90">Kluczowe funkcje</p>
+        <h2 class="brand-heading mt-2 text-2xl font-semibold text-white sm:text-3xl">Co dostajesz w panelu marki</h2>
+      </div>
+      <div class="grid gap-4 md:grid-cols-3">
+        {
+          features.map((feature) => (
+            <article class="brand-glass p-5">
+              <h3 class="text-base font-semibold text-white">{feature.title}</h3>
+              <p class="mt-2 text-sm text-slate-300">{feature.description}</p>
+            </article>
+          ))
+        }
+      </div>
+    </section>
+
+    <section class="mt-6 grid gap-5 lg:grid-cols-2">
+      <article class="brand-glass p-6">
+        <p class="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-300/90">Dowód społeczny</p>
+        <h2 class="brand-heading mt-2 text-2xl font-semibold text-white">Marki już rosną z Crezio</h2>
+        <blockquote class="mt-4 rounded-xl border border-white/10 bg-white/5 p-4 text-sm text-slate-200">
+          „W jednym panelu mamy zgłoszenia, statusy i raport po kampanii. Zespół oszczędza godziny tygodniowo.”
+          <footer class="mt-3 text-xs text-slate-400">— Brand Manager, marka beauty (pilot)</footer>
+        </blockquote>
+      </article>
+
+      <article class="brand-glass p-6">
+        <p class="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-300/90">Pakiety abonamentowe</p>
+        <h2 class="brand-heading mt-2 text-2xl font-semibold text-white">Wybierz skalę działań</h2>
+        <div class="mt-4 grid gap-2 text-sm text-slate-200">
+          <div class="rounded-xl border border-white/10 bg-white/5 px-3 py-2">Basic — 1 aktywna kampania</div>
+          <div class="rounded-xl border border-emerald-300/30 bg-emerald-500/10 px-3 py-2">Medium — 3 aktywne kampanie</div>
+          <div class="rounded-xl border border-white/10 bg-white/5 px-3 py-2">Platinum — 10 aktywnych kampanii</div>
+        </div>
+        <a href="/signup" class="brand-cta mt-5 w-full sm:w-auto">Rozpocznij teraz</a>
+      </article>
+    </section>
+
+    <section class="mt-6 brand-glass p-7 text-center">
+      <h2 class="brand-heading text-2xl font-semibold text-white sm:text-3xl">Gotowi na pierwszą kampanię?</h2>
+      <p class="mx-auto mt-3 max-w-2xl text-sm text-slate-300 sm:text-base">
+        Załóż konto marki i zacznij prowadzić kampanie barterowe z pełną kontrolą nad selekcją twórców i wynikami.
       </p>
-    </div>
+      <div class="mt-6 flex flex-col justify-center gap-3 sm:flex-row">
+        <a href="/signup" class="brand-cta w-full sm:w-auto">Załóż konto marki</a>
+        <a href="/login" class="brand-cta-outline w-full sm:w-auto">Mam już konto</a>
+      </div>
+    </section>
   </main>
 </Layout>

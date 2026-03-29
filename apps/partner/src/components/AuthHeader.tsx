@@ -48,36 +48,36 @@ export default function AuthHeader({
 
   if (!loaded) {
     return (
-      <header className="navbar bg-base-200 px-4">
-        <div className="flex-1">
-          <a href="/" className="btn btn-ghost text-xl">crezio.app – Marki</a>
-        </div>
-        <div className="flex-none gap-2">
-          <span className="text-base-content/60">Ładowanie…</span>
+      <header className="sticky top-0 z-40 border-b border-white/10 bg-slate-950/70 backdrop-blur">
+        <div className="brand-container flex min-h-16 items-center justify-between gap-4">
+          <a href="/" className="brand-heading text-lg font-semibold text-white sm:text-xl">
+            crezio.app <span className="text-slate-300">/ Panel Marki</span>
+          </a>
+          <span className="text-sm text-slate-400">Ładowanie...</span>
         </div>
       </header>
     );
   }
 
   return (
-    <header className="navbar bg-base-200 px-4">
-      <div className="flex-1">
-        <a href="/" className="btn btn-ghost text-xl">crezio.app – Marki</a>
-      </div>
-      <div className="flex-none gap-2">
+    <header className="sticky top-0 z-40 border-b border-white/10 bg-slate-950/70 backdrop-blur">
+      <div className="brand-container flex min-h-16 items-center justify-between gap-4">
+        <a href="/" className="brand-heading text-lg font-semibold text-white sm:text-xl">
+          crezio.app <span className="text-slate-300">/ Panel Marki</span>
+        </a>
         {user ? (
-          <>
-            <span className="text-sm text-base-content/80 hidden sm:inline">{user.email}</span>
-            <a href="/" className="btn btn-ghost btn-sm">{dashboardLabel}</a>
-            <button type="button" className="btn btn-ghost btn-sm" onClick={handleLogout}>
+          <div className="flex items-center gap-2 sm:gap-3">
+            <span className="hidden max-w-44 truncate text-sm text-slate-300 sm:inline">{user.email}</span>
+            <a href="/dashboard" className="brand-cta-outline px-3 py-2 text-xs sm:text-sm">{dashboardLabel}</a>
+            <button type="button" className="brand-cta-outline px-3 py-2 text-xs sm:text-sm" onClick={handleLogout}>
               Wyloguj
             </button>
-          </>
+          </div>
         ) : (
-          <>
-            <a href={loginHref} className="btn btn-ghost btn-sm">Zaloguj się</a>
-            <a href={signupHref} className="btn btn-primary btn-sm">Zarejestruj markę</a>
-          </>
+          <div className="flex items-center gap-2 sm:gap-3">
+            <a href={loginHref} className="brand-cta-outline px-3 py-2 text-xs sm:text-sm">Zaloguj się</a>
+            <a href={signupHref} className="brand-cta px-3 py-2 text-xs sm:text-sm">Zarejestruj markę</a>
+          </div>
         )}
       </div>
     </header>
