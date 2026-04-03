@@ -1,0 +1,18 @@
+---
+import Layout from '../layouts/Layout.astro';
+import SubscriptionPlansView from '../components/SubscriptionPlansView';
+
+const contactEmail = import.meta.env.PUBLIC_CONTACT_EMAIL ?? '';
+const contactUrl = import.meta.env.PUBLIC_CONTACT_URL ?? '';
+---
+<Layout title="Abonament – crezio.app (Marki)">
+  <main class="brand-container relative z-10 py-8 sm:py-10">
+    <SubscriptionPlansView
+      client:load
+      supabaseUrl={import.meta.env.PUBLIC_SUPABASE_URL}
+      supabaseAnonKey={import.meta.env.PUBLIC_SUPABASE_ANON_KEY}
+      contactEmail={contactEmail}
+      contactUrl={contactUrl}
+    />
+  </main>
+</Layout>

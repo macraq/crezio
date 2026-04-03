@@ -81,3 +81,28 @@ export const CAMPAIGN_LIMITS: Record<SubscriptionTier, number> = {
   medium: 3,
   platinum: 10,
 };
+
+/** Liczba produktów do wysyłki / testów w ramach abonamentu; `null` = bez limitu. */
+export const TESTING_PRODUCT_LIMITS: Record<SubscriptionTier, number | null> = {
+  basic: 5,
+  medium: 20,
+  platinum: null,
+};
+
+/** Sposób wyboru zgłoszonych influencerów do kampanii (do przyszłej logiki UI). */
+export type InfluencerSelectionMode = 'ai_only' | 'hybrid_half' | 'manual_full';
+
+export const INFLUENCER_SELECTION_BY_TIER: Record<SubscriptionTier, InfluencerSelectionMode> = {
+  basic: 'ai_only',
+  medium: 'hybrid_half',
+  platinum: 'manual_full',
+};
+
+/** Poziom widoczności szczegółów profilu influencera (do przyszłej logiki UI). */
+export type InfluencerDetailLevel = 'none' | 'basic_reach' | 'full';
+
+export const INFLUENCER_DETAIL_LEVEL_BY_TIER: Record<SubscriptionTier, InfluencerDetailLevel> = {
+  basic: 'none',
+  medium: 'basic_reach',
+  platinum: 'full',
+};

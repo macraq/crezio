@@ -68,6 +68,9 @@ export default function AuthHeader({
         {user ? (
           <div className="flex items-center gap-2 sm:gap-3">
             <span className="hidden max-w-44 truncate text-sm text-slate-300 sm:inline">{user.email}</span>
+            <a href="/subscription" className="brand-cta-outline px-3 py-2 text-xs sm:text-sm">
+              Abonament
+            </a>
             <a href="/dashboard" className="brand-cta-outline px-3 py-2 text-xs sm:text-sm">{dashboardLabel}</a>
             <button type="button" className="brand-cta-outline px-3 py-2 text-xs sm:text-sm" onClick={handleLogout}>
               Wyloguj
@@ -75,6 +78,9 @@ export default function AuthHeader({
           </div>
         ) : (
           <div className="flex items-center gap-2 sm:gap-3">
+            <a href="/subscription" className="brand-cta-outline px-3 py-2 text-xs sm:text-sm">
+              Abonament
+            </a>
             <a href={loginHref} className="brand-cta-outline px-3 py-2 text-xs sm:text-sm">Zaloguj się</a>
             <a href={signupHref} className="brand-cta px-3 py-2 text-xs sm:text-sm">Zarejestruj markę</a>
           </div>

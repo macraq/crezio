@@ -112,11 +112,20 @@ const features = [
         <p class="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-300/90">Pakiety abonamentowe</p>
         <h2 class="brand-heading mt-2 text-2xl font-semibold text-white">Wybierz skalę działań</h2>
         <div class="mt-4 grid gap-2 text-sm text-slate-200">
-          <div class="rounded-xl border border-white/10 bg-white/5 px-3 py-2">Basic — 1 aktywna kampania</div>
-          <div class="rounded-xl border border-emerald-300/30 bg-emerald-500/10 px-3 py-2">Medium — 3 aktywne kampanie</div>
-          <div class="rounded-xl border border-white/10 bg-white/5 px-3 py-2">Platinum — 10 aktywnych kampanii</div>
+          <div class="rounded-xl border border-white/10 bg-white/5 px-3 py-2">
+            <span class="font-semibold text-white">Basic</span> — szybki start: AI dobiera twórców, 5 produktów w testach, pełna obsługa kampanii w panelu.
+          </div>
+          <div class="rounded-xl border border-emerald-300/30 bg-emerald-500/10 px-3 py-2">
+            <span class="font-semibold text-emerald-200">Medium</span> — więcej kampanii i 20 produktów; Ty i AI dzielicie się selekcją, widzisz kluczowe zasięgi.
+          </div>
+          <div class="rounded-xl border border-white/10 bg-white/5 px-3 py-2">
+            <span class="font-semibold text-white">Platinum</span> — bez limitu testów, ręczny wybór każdego influencera i pełny podgląd profilu pod duże programy.
+          </div>
         </div>
-        <a href="/signup" class="brand-cta mt-5 w-full sm:w-auto">Rozpocznij teraz</a>
+        <div class="mt-4 flex flex-col gap-2 sm:flex-row">
+          <a href="/subscription" class="brand-cta-outline w-full text-center sm:w-auto">Porównaj pakiety</a>
+          <a href="/signup" class="brand-cta w-full text-center sm:w-auto">Rozpocznij teraz</a>
+        </div>
       </article>
     </section>
 

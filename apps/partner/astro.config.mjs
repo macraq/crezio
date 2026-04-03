@@ -4,7 +4,10 @@ import tailwind from '@astrojs/tailwind';
 
 export default defineConfig({
   integrations: [react(), tailwind()],
-  output: 'hybrid',
+  output: 'static',
+  redirects: {
+    '/abonament': '/subscription',
+  },
   server: { port: 4322 },
   vite: {
     envPrefix: ['PUBLIC_', 'VITE_'],
