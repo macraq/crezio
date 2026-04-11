@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import type { SupabaseClient, User } from '@supabase/supabase-js';
+import CampaignApplySection from './CampaignApplySection';
 
 type CampaignDetail = {
   id: string;
@@ -60,8 +61,6 @@ export default function CampaignDetailView({ campaignId, supabaseUrl, supabaseAn
   const [campaign, setCampaign] = useState<CampaignDetail | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [applied, setApplied] = useState(false);
-  const [applying, setApplying] = useState(false);
-  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   useEffect(() => {
     const fromProp = campaignId?.trim();
@@ -76,7 +75,6 @@ export default function CampaignDetailView({ campaignId, supabaseUrl, supabaseAn
 
   const load = useCallback(async (client: SupabaseClient, uid: string | undefined, id: string) => {
     setLoadError(null);
-    setMessage(null);
 
     const { data, error } = await client
       .from('campaigns')
@@ -158,31 +156,6 @@ export default function CampaignDetailView({ campaignId, supabaseUrl, supabaseAn
     return now >= start && now <= endApp;
   }
 
-  async function handleApply() {
-    if (!user || !campaign || !supabaseUrl?.trim() || !supabaseAnonKey?.trim()) {
-      setMessage({ type: 'error', text: 'Zaloguj się, aby zgłosić się do kampanii.' });
-      return;
-    }
-    setApplying(true);
-    setMessage(null);
-    const supabase = createClient(supabaseUrl, supabaseAnonKey);
-    const { error } = await supabase.from('campaign_applications').insert({
-      campaign_id: campaign.id,
-      influencer_id: user.id,
-    });
-    setApplying(false);
-    if (error) {
-      if (error.code === '23505') {
-        setMessage({ type: 'error', text: 'Masz już zgłoszenie do tej kampanii.' });
-      } else {
-        setMessage({ type: 'error', text: error.message || 'Zgłoszenie nie powiodło się.' });
-      }
-      return;
-    }
-    setApplied(true);
-    setMessage({ type: 'success', text: 'Zgłoszenie zostało wysłane.' });
-  }
-
   if (!supabaseUrl?.trim() || !supabaseAnonKey?.trim()) {
     return <p className="text-base-content/70">Brak konfiguracji Supabase.</p>;
   }
@@ -228,12 +201,6 @@ export default function CampaignDetailView({ campaignId, supabaseUrl, supabaseAn
           <h1 className="mt-4 text-3xl font-bold leading-tight">{campaign.name}</h1>
         </div>
       </div>
-
-      {message && (
-        <div role="alert" className={`alert ${message.type === 'success' ? 'alert-success' : 'alert-error'}`}>
-          <span>{message.text}</span>
-        </div>
-      )}
 
       {campaign.description ? (
         <section className="rounded-2xl border border-base-content/10 bg-base-100/40 p-6">
@@ -285,36 +252,35 @@ export default function CampaignDetailView({ campaignId, supabaseUrl, supabaseAn
         </dl>
       </section>
 
+      {!applied && user && applyOpen ? (
+        <CampaignApplySection
+          supabaseUrl={supabaseUrl}
+          supabaseAnonKey={supabaseAnonKey}
+          user={user}
+          campaignId={campaign.id}
+          canApply={applyOpen}
+          alreadyApplied={applied}
+          onApplied={() => setApplied(true)}
+        />
+      ) : null}
+
       <div className="flex flex-wrap items-center gap-3">
         {applied ? (
           <span className="btn btn-outline border-success/40 text-success pointer-events-none">Zgłoszono do tej kampanii</span>
-        ) : user ? (
-          applyOpen ? (
-            <button type="button" className="btn btn-crezio-gradient" disabled={applying} onClick={handleApply}>
-              {applying ? (
-                <>
-                  <span className="loading loading-spinner loading-sm" />
-                  Wysyłanie…
-                </>
-              ) : (
-                'Zgłoś się do kampanii'
-              )}
-            </button>
-          ) : (
-            <p className="text-sm text-base-content/70">
-              {campaign.status === 'applications_closed'
-                ? 'Zbieranie zgłoszeń zostało zamknięte.'
-                : 'Zgłoszenia nie są jeszcze lub już nie są przyjmowane w tych terminach.'}
-            </p>
-          )
-        ) : (
+        ) : user && !applyOpen ? (
+          <p className="text-sm text-base-content/70">
+            {campaign.status === 'applications_closed'
+              ? 'Zbieranie zgłoszeń zostało zamknięte.'
+              : 'Zgłoszenia nie są jeszcze lub już nie są przyjmowane w tych terminach.'}
+          </p>
+        ) : !user ? (
           <>
             <p className="text-sm text-base-content/70">Zaloguj się, aby wysłać zgłoszenie.</p>
             <a href="/login" className="btn btn-primary btn-sm">
               Zaloguj się
             </a>
           </>
-        )}
+        ) : null}
         <a href="/dashboard" className="btn btn-ghost btn-sm">
           Panel
         </a>

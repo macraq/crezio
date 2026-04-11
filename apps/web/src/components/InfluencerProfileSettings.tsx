@@ -57,6 +57,7 @@ interface InfluencerProfileRow {
   hair_style: string | null;
   skin_type: string | null;
   skin_notes: string | null;
+  self_description: string | null;
   shipping_address_encrypted: string | null;
   social_links: SocialLinksState | null;
   profile_completion_pct: number | null;
@@ -83,6 +84,7 @@ export default function InfluencerProfileSettings({ supabaseUrl, supabaseAnonKey
   const [hairStyle, setHairStyle] = useState('');
   const [skinType, setSkinType] = useState('');
   const [skinNotes, setSkinNotes] = useState('');
+  const [selfDescription, setSelfDescription] = useState('');
   const [shippingAddress, setShippingAddress] = useState('');
   const [links, setLinks] = useState<SocialLinksState>({});
   const [storedCompletion, setStoredCompletion] = useState<number | null>(null);
@@ -109,7 +111,7 @@ export default function InfluencerProfileSettings({ supabaseUrl, supabaseAnonKey
       supabase
         .from('influencer_profiles')
         .select(
-          'category,location,followers_count,engagement_rate,height_cm,hair_color,hair_style,skin_type,skin_notes,shipping_address_encrypted,social_links,profile_completion_pct'
+          'category,location,followers_count,engagement_rate,height_cm,hair_color,hair_style,skin_type,skin_notes,self_description,shipping_address_encrypted,social_links,profile_completion_pct'
         )
         .eq('profile_id', profileId)
         .maybeSingle(),
@@ -141,6 +143,7 @@ export default function InfluencerProfileSettings({ supabaseUrl, supabaseAnonKey
       setHairStyle(row.hair_style ?? '');
       setSkinType(row.skin_type ?? '');
       setSkinNotes(row.skin_notes ?? '');
+      setSelfDescription(row.self_description ?? '');
       setShippingAddress(row.shipping_address_encrypted ?? '');
       setLinks((row.social_links as SocialLinksState) ?? {});
       setStoredCompletion(row.profile_completion_pct ?? null);
@@ -162,6 +165,7 @@ export default function InfluencerProfileSettings({ supabaseUrl, supabaseAnonKey
     hairStyle: hairStyle || null,
     skinType: skinType || null,
     skinNotes: skinNotes || null,
+    selfDescription: selfDescription || null,
   });
 
   async function handleSave(e: React.FormEvent) {
@@ -210,6 +214,7 @@ export default function InfluencerProfileSettings({ supabaseUrl, supabaseAnonKey
       hairStyle: hairStyle.trim() || null,
       skinType: skinType.trim() || null,
       skinNotes: skinNotes.trim() || null,
+      selfDescription: selfDescription.trim() || null,
     });
 
     const { error: profileErr } = await supabase
@@ -235,6 +240,7 @@ export default function InfluencerProfileSettings({ supabaseUrl, supabaseAnonKey
         hair_style: hairStyle.trim() || null,
         skin_type: skinType.trim() || null,
         skin_notes: skinNotes.trim() || null,
+        self_description: selfDescription.trim() || null,
         shipping_address_encrypted: shippingAddress.trim() || null,
         social_links: trimmedLinks,
         profile_completion_pct: completion,
@@ -345,6 +351,23 @@ export default function InfluencerProfileSettings({ supabaseUrl, supabaseAnonKey
           <p className="text-sm text-base-content/70">
             Marki widzą te informacje w kontekście zgłoszeń — ułatwia dopasowanie do testów produktów (np. beauty).
           </p>
+          <div className="form-control mt-4">
+            <label className="label py-1" htmlFor="profile-self-description">
+              <span className="label-text font-medium">Opisz siebie (dopasowanie do testów)</span>
+            </label>
+            <textarea
+              id="profile-self-description"
+              className="textarea textarea-bordered min-h-[120px] w-full"
+              maxLength={2000}
+              placeholder="Kim jesteś jako twórca, jakie treści publikujesz, czym się interesujesz w kontekście testów produktów — pomoże nam ocenić, na ile pasujesz do konkretnej kampanii."
+              value={selfDescription}
+              onChange={(e) => setSelfDescription(e.target.value)}
+              aria-describedby="profile-self-description-hint"
+            />
+            <p id="profile-self-description-hint" className="label-text-alt mt-1 text-base-content/60">
+              Opcjonalnie, maks. 2000 znaków. Wykorzystamy to przy ocenie dopasowania do wymagań marki w teście — zobaczysz też podgląd dopasowania przy kampaniach.
+            </p>
+          </div>
           <div className="divider my-2 text-xs text-base-content/50">Profil testera</div>
           <p className="text-sm text-base-content/60">
             Uzupełnij, jeśli chcesz lepiej pasować do kampanii kosmetycznych (tonacja, typ skóry, włosy). Wszystkie pola są dobrowolne.

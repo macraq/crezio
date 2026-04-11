@@ -39,6 +39,8 @@ export interface InfluencerProfile {
   hair_style: string | null;
   skin_type: string | null;
   skin_notes: string | null;
+  /** Swobodny opis o sobie — dopasowanie do oczekiń marki w teście (`Campaign.target_tester_description`). */
+  self_description: string | null;
   social_links: Record<string, string>;
   profile_completion_pct: number;
   is_premium: boolean;
@@ -55,6 +57,24 @@ export interface Brand {
   contact: string | null;
   subscription_tier: SubscriptionTier;
   subscription_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+/** Zgłoszenie influencera do kampanii. */
+export interface CampaignApplication {
+  id: string;
+  campaign_id: string;
+  influencer_id: string;
+  status: ApplicationStatus;
+  /** Tylko gdy influencer napisał dedykowany opis pod kampanię; `null` = użyto treści z profilu. */
+  dedicated_self_description: string | null;
+  /** Pełny tekst opisu w momencie wysłania zgłoszenia (z profilu lub dedykowany). */
+  pitch_text_at_submit: string | null;
+  brief: string | null;
+  materials_from_brand: string | null;
+  deadline: string | null;
+  publication_link: string | null;
   created_at: string;
   updated_at: string;
 }

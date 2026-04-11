@@ -37,6 +37,11 @@ type ApplicationRow = {
   publication_link: string | null;
   created_at: string;
   influencer_id: string;
+  dedicated_self_description: string | null;
+  pitch_text_at_submit: string | null;
+  /** Tekst do wyświetlenia (snapshot przy zgłoszeniu). */
+  resolvedPitch: string | null;
+  pitchSource: 'dedicated' | 'profile' | 'empty';
   followers?: string;
   er?: string;
 };
@@ -189,7 +194,9 @@ export default function BrandCampaignDetailView({
 
     const { data: apps, error: appsError } = await client
       .from('campaign_applications')
-      .select('id,status,deadline,publication_link,created_at,influencer_id')
+      .select(
+        'id,status,deadline,publication_link,created_at,influencer_id,dedicated_self_description,pitch_text_at_submit'
+      )
       .eq('campaign_id', id)
       .order('created_at', { ascending: false });
 
@@ -227,8 +234,17 @@ export default function BrandCampaignDetailView({
 
       const merged = list.map((a) => {
         const m = metrics.get(a.influencer_id);
+        const dedicated = (a.dedicated_self_description ?? '').trim() || null;
+        const resolvedPitch = (a.pitch_text_at_submit ?? '').trim() || null;
+        const pitchSource: ApplicationRow['pitchSource'] = dedicated
+          ? 'dedicated'
+          : resolvedPitch
+            ? 'profile'
+            : 'empty';
         return {
           ...a,
+          resolvedPitch,
+          pitchSource,
           followers: detailLevel === 'none' ? '—' : formatFollowers(m?.followers_count),
           er: detailLevel === 'none' ? '—' : formatEr(m?.engagement_rate ?? null),
         };
@@ -484,6 +500,7 @@ export default function BrandCampaignDetailView({
                     </>
                   ) : null}
                   <th className="bg-transparent">Status</th>
+                  <th className="bg-transparent max-w-[220px]">Opis zgłoszenia</th>
                   <th className="bg-transparent">Zgłoszono</th>
                   <th className="bg-transparent">Deadline</th>
                   <th className="bg-transparent">Publikacja</th>
@@ -503,6 +520,27 @@ export default function BrandCampaignDetailView({
                       </>
                     ) : null}
                     <td className="text-slate-200">{APP_STATUS_LABEL[a.status] ?? a.status}</td>
+                    <td className="max-w-[220px] align-top text-slate-300">
+                      {a.resolvedPitch ? (
+                        <div className="space-y-1">
+                          <span
+                            className={`badge badge-xs ${
+                              a.pitchSource === 'dedicated' ? 'border-emerald-400/40 bg-emerald-500/15 text-emerald-100' : 'border-white/15 bg-white/5 text-slate-300'
+                            }`}
+                          >
+                            {a.pitchSource === 'dedicated' ? 'Dedykowany' : 'Z profilu'}
+                          </span>
+                          <CollapsibleClamp
+                            variant="text"
+                            text={a.resolvedPitch}
+                            lines={2}
+                            contentClassName="text-xs leading-relaxed text-slate-300"
+                          />
+                        </div>
+                      ) : (
+                        <span className="text-slate-500">—</span>
+                      )}
+                    </td>
                     <td className="text-slate-400">{formatPlDateTime(a.created_at)}</td>
                     <td className="text-slate-400">{a.deadline ? formatPlDateTime(a.deadline) : '—'}</td>
                     <td className="max-w-[180px] truncate">

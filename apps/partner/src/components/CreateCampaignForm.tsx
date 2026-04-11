@@ -18,6 +18,25 @@ function normalizeCampaignStatus(raw: unknown): CampaignStatus {
   return VALID_STATUSES.includes(s as CampaignStatus) ? (s as CampaignStatus) : 'draft';
 }
 
+/** Komunikat z triggera `check_campaign_limit` (PL po migracji) lub stary tekst EN — zawsze czytelny po polsku. */
+const CAMPAIGN_LIMIT_USER_MESSAGE =
+  'Nie można zapisać: przekroczono limit równoległych kampanii w pakiecie (liczą się szkice, aktywne oraz te z zamkniętymi zgłoszeniami). Zakończ inną kampanię lub zmień pakiet.';
+
+function mapCampaignSaveError(msg: string): string {
+  const m = msg || '';
+  if (
+    m.includes('Campaign limit exceeded') ||
+    m.includes('check_campaign_limit') ||
+    m.includes('Przekroczono limit równoległych kampanii')
+  ) {
+    return CAMPAIGN_LIMIT_USER_MESSAGE;
+  }
+  if (m.includes('brand_id invalid') || m.includes('Nieprawidłowy identyfikator marki')) {
+    return 'Błąd kontekstu marki. Odśwież stronę lub skontaktuj się z pomocą.';
+  }
+  return msg;
+}
+
 interface CreateCampaignFormProps {
   supabaseUrl: string;
   supabaseAnonKey: string;
@@ -291,14 +310,7 @@ export default function CreateCampaignForm({ supabaseUrl, supabaseAnonKey, editM
         .eq('brand_id', brand.id);
       setSubmitting(false);
       if (error) {
-        const msg = error.message || '';
-        if (msg.includes('Campaign limit exceeded') || msg.includes('check_campaign_limit')) {
-          setSubmitError(
-            'Nie można ustawić tego statusu: przekroczony limit równoległych kampanii w pakiecie (szkic + aktywne + zamknięte zgłoszenia). Zakończ inną kampanię lub zmień pakiet.'
-          );
-        } else {
-          setSubmitError(msg);
-        }
+        setSubmitError(mapCampaignSaveError(error.message || ''));
         return;
       }
       setSuccess('Zmiany zostały zapisane.');
@@ -326,7 +338,7 @@ export default function CreateCampaignForm({ supabaseUrl, supabaseAnonKey, editM
     setSubmitting(false);
 
     if (error) {
-      setSubmitError(error.message);
+      setSubmitError(mapCampaignSaveError(error.message || ''));
       return;
     }
 

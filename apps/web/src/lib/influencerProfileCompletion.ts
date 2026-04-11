@@ -17,13 +17,14 @@ export interface InfluencerProfileCompletionInput {
   hairStyle: string | null;
   skinType: string | null;
   skinNotes: string | null;
+  selfDescription: string | null;
 }
 
 /** Suma wag = 100 — core kampanii + segment „profil testera”. */
 const WEIGHTS = {
-  category: 14,
-  location: 14,
-  followers: 14,
+  category: 12,
+  location: 12,
+  followers: 13,
   shipping: 18,
   social: 15,
   engagement: 10,
@@ -32,6 +33,7 @@ const WEIGHTS = {
   hairStyle: 3,
   skinType: 3,
   skinNotes: 3,
+  selfDescription: 5,
 } as const;
 
 function hasAnySocialLink(links: SocialLinksState): boolean {
@@ -55,5 +57,6 @@ export function computeInfluencerProfileCompletion(input: InfluencerProfileCompl
   if ((input.hairStyle ?? '').trim()) pct += WEIGHTS.hairStyle;
   if ((input.skinType ?? '').trim()) pct += WEIGHTS.skinType;
   if ((input.skinNotes ?? '').trim()) pct += WEIGHTS.skinNotes;
+  if ((input.selfDescription ?? '').trim()) pct += WEIGHTS.selfDescription;
   return Math.min(100, Math.round(pct));
 }

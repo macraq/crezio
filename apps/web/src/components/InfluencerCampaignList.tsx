@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import type { SupabaseClient, User } from '@supabase/supabase-js';
+import CampaignApplySection from './CampaignApplySection';
 
 type CampaignRow = {
   id: string;
@@ -45,7 +46,7 @@ export default function InfluencerCampaignList({ supabaseUrl, supabaseAnonKey }:
   const [loading, setLoading] = useState(true);
   const [campaigns, setCampaigns] = useState<CampaignRow[]>([]);
   const [appliedIds, setAppliedIds] = useState<Set<string>>(new Set());
-  const [applyingId, setApplyingId] = useState<string | null>(null);
+  const [applyModalCampaignId, setApplyModalCampaignId] = useState<string | null>(null);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [filterCategory, setFilterCategory] = useState('');
   const [filterContentType, setFilterContentType] = useState('');
@@ -138,31 +139,6 @@ export default function InfluencerCampaignList({ supabaseUrl, supabaseAnonKey }:
       return true;
     });
   }, [campaigns, filterCategory, filterContentType]);
-
-  async function handleApply(campaignId: string) {
-    if (!user || !supabaseUrl?.trim() || !supabaseAnonKey?.trim()) {
-      setMessage({ type: 'error', text: 'Zaloguj się, aby zgłosić się do kampanii.' });
-      return;
-    }
-    setApplyingId(campaignId);
-    setMessage(null);
-    const supabase = createClient(supabaseUrl, supabaseAnonKey);
-    const { error } = await supabase.from('campaign_applications').insert({
-      campaign_id: campaignId,
-      influencer_id: user.id,
-    });
-    setApplyingId(null);
-    if (error) {
-      if (error.code === '23505') {
-        setMessage({ type: 'error', text: 'Masz już zgłoszenie do tej kampanii.' });
-      } else {
-        setMessage({ type: 'error', text: error.message || 'Zgłoszenie nie powiodło się.' });
-      }
-      return;
-    }
-    setAppliedIds((prev) => new Set([...prev, campaignId]));
-    setMessage({ type: 'success', text: 'Zgłoszenie zostało wysłane. Status zobaczysz w panelu (Moje kampanie).' });
-  }
 
   if (!supabaseUrl?.trim() || !supabaseAnonKey?.trim()) {
     return (
@@ -291,17 +267,10 @@ export default function InfluencerCampaignList({ supabaseUrl, supabaseAnonKey }:
                       <button
                         type="button"
                         className="btn btn-crezio-gradient btn-sm whitespace-nowrap"
-                        disabled={applyingId !== null}
-                        onClick={() => handleApply(c.id)}
+                        disabled={applyModalCampaignId !== null}
+                        onClick={() => setApplyModalCampaignId(c.id)}
                       >
-                        {applyingId === c.id ? (
-                          <>
-                            <span className="loading loading-spinner loading-xs" />
-                            Wysyłanie…
-                          </>
-                        ) : (
-                          'Zgłoś się'
-                        )}
+                        Zgłoś się
                       </button>
                     ) : (
                       <span className="text-sm text-base-content/60">Wymagane logowanie</span>
@@ -313,6 +282,52 @@ export default function InfluencerCampaignList({ supabaseUrl, supabaseAnonKey }:
           })}
         </ul>
       )}
+
+      {applyModalCampaignId && user ? (
+        <div className="modal modal-open z-[100]" role="dialog" aria-modal="true" aria-labelledby="apply-modal-title">
+          <div className="modal-box relative max-h-[min(90vh,720px)] w-full max-w-lg overflow-y-auto">
+            <button
+              type="button"
+              className="btn btn-sm btn-circle btn-ghost absolute right-2 top-2"
+              aria-label="Zamknij"
+              onClick={() => setApplyModalCampaignId(null)}
+            >
+              ✕
+            </button>
+            <h3 id="apply-modal-title" className="pr-10 text-lg font-bold">
+              Zgłoszenie do kampanii
+            </h3>
+            <p className="mt-1 text-sm text-base-content/70">
+              Wybierz opis domyślny z profilu albo napisz dedykowany — druga opcja bywa skuteczniejsza, gdy odniesiesz się do produktu i briefu.
+            </p>
+            <div className="mt-4">
+              <CampaignApplySection
+                supabaseUrl={supabaseUrl}
+                supabaseAnonKey={supabaseAnonKey}
+                user={user}
+                campaignId={applyModalCampaignId}
+                canApply
+                alreadyApplied={false}
+                compact
+                onApplied={() => {
+                  setAppliedIds((prev) => new Set([...prev, applyModalCampaignId]));
+                  setApplyModalCampaignId(null);
+                  setMessage({
+                    type: 'success',
+                    text: 'Zgłoszenie zostało wysłane. Status zobaczysz w panelu (Moje kampanie).',
+                  });
+                }}
+              />
+            </div>
+          </div>
+          <button
+            type="button"
+            className="modal-backdrop bg-base-content/50"
+            aria-label="Zamknij"
+            onClick={() => setApplyModalCampaignId(null)}
+          />
+        </div>
+      ) : null}
     </div>
   );
 }
