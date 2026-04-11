@@ -1,6 +1,12 @@
 import { useCallback, useEffect, useState } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import type { SupabaseClient } from '@supabase/supabase-js';
+import {
+  canManuallySelectInfluencers,
+  INFLUENCER_DETAIL_LEVEL_BY_TIER,
+  maxManualSelections,
+  type SubscriptionTier,
+} from '@influeapp/lib';
 
 type CampaignStatus = 'draft' | 'active' | 'applications_closed' | 'ended';
 
@@ -27,6 +33,8 @@ type ApplicationRow = {
   publication_link: string | null;
   created_at: string;
   influencer_id: string;
+  followers?: string;
+  er?: string;
 };
 
 const STATUS_LABEL: Record<CampaignStatus, string> = {
@@ -62,6 +70,23 @@ function shortId(id: string): string {
   return id.length > 12 ? `${id.slice(0, 8)}…` : id;
 }
 
+function formatFollowers(n: number | null | undefined): string {
+  if (n == null || Number.isNaN(n)) return '—';
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
+  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}k`;
+  return String(n);
+}
+
+function formatEr(rate: number | null | undefined): string {
+  if (rate == null || Number.isNaN(rate)) return '—';
+  const pct = rate <= 1 ? rate * 100 : rate;
+  return `${pct.toFixed(1)}%`;
+}
+
+function isSelectedProgress(status: string): boolean {
+  return status !== 'applied';
+}
+
 interface BrandCampaignDetailViewProps {
   /** Opcjonalnie; bez propsa ID jest czytane z `?id=` (strona statyczna). */
   campaignId?: string;
@@ -74,6 +99,7 @@ export default function BrandCampaignDetailView({
   supabaseUrl,
   supabaseAnonKey,
 }: BrandCampaignDetailViewProps) {
+  const [client, setClient] = useState<SupabaseClient | null>(null);
   const [resolvedId, setResolvedId] = useState<string | null>(null);
   /** Po pierwszym odczycie propsa / ?id= w przeglądarce */
   const [idReady, setIdReady] = useState(false);
@@ -81,6 +107,8 @@ export default function BrandCampaignDetailView({
   const [error, setError] = useState<string | null>(null);
   const [campaign, setCampaign] = useState<CampaignDetail | null>(null);
   const [applications, setApplications] = useState<ApplicationRow[]>([]);
+  const [tier, setTier] = useState<SubscriptionTier>('basic');
+  const [subscriptionActive, setSubscriptionActive] = useState(false);
 
   useEffect(() => {
     const fromProp = campaignId?.trim();
@@ -111,6 +139,23 @@ export default function BrandCampaignDetailView({
       setLoading(false);
       return;
     }
+
+    const { data: brandRow, error: brandError } = await client
+      .from('brands')
+      .select('subscription_tier,subscription_active')
+      .eq('profile_id', userId)
+      .maybeSingle();
+
+    if (brandError || !brandRow) {
+      setError(brandError?.message ?? 'Brak profilu marki.');
+      setLoading(false);
+      return;
+    }
+
+    const st = (brandRow as { subscription_tier: SubscriptionTier }).subscription_tier ?? 'basic';
+    const subActive = (brandRow as { subscription_active: boolean }).subscription_active ?? false;
+    setTier(st);
+    setSubscriptionActive(Boolean(subActive));
 
     const { data: camp, error: campError } = await client
       .from('campaigns')
@@ -148,7 +193,44 @@ export default function BrandCampaignDetailView({
       setError(appsError.message);
       setApplications([]);
     } else {
-      setApplications((apps ?? []) as ApplicationRow[]);
+      const list = ((apps ?? []) as ApplicationRow[]) ?? [];
+      const infIds = [...new Set(list.map((a) => a.influencer_id))];
+
+      let metrics = new Map<string, { followers_count: number | null; engagement_rate: number | null }>();
+      const detailLevel = INFLUENCER_DETAIL_LEVEL_BY_TIER[st] ?? 'none';
+      if (detailLevel !== 'none' && infIds.length > 0) {
+        const { data: ipRows } = await client
+          .from('influencer_profiles_public')
+          .select('profile_id,followers_count,engagement_rate')
+          .in('profile_id', infIds);
+        metrics = new Map(
+          (ipRows ?? []).map((r) => {
+            const row = r as {
+              profile_id: string;
+              followers_count: number | null;
+              engagement_rate: number | string | null;
+            };
+            return [
+              row.profile_id,
+              {
+                followers_count: row.followers_count,
+                engagement_rate: row.engagement_rate != null ? Number(row.engagement_rate) : null,
+              },
+            ];
+          })
+        );
+      }
+
+      const merged = list.map((a) => {
+        const m = metrics.get(a.influencer_id);
+        return {
+          ...a,
+          followers: detailLevel === 'none' ? '—' : formatFollowers(m?.followers_count),
+          er: detailLevel === 'none' ? '—' : formatEr(m?.engagement_rate ?? null),
+        };
+      });
+
+      setApplications(merged);
     }
 
     setLoading(false);
@@ -172,6 +254,7 @@ export default function BrandCampaignDetailView({
     }
 
     const client = createClient(supabaseUrl, supabaseAnonKey);
+    setClient(client);
     setLoading(true);
     load(client, resolvedId);
     const {
@@ -213,6 +296,38 @@ export default function BrandCampaignDetailView({
   }
 
   const statusLabel = STATUS_LABEL[campaign.status] ?? campaign.status;
+  const detailLevel = INFLUENCER_DETAIL_LEVEL_BY_TIER[tier] ?? 'none';
+  const showReach = detailLevel !== 'none';
+  const canManual = subscriptionActive && canManuallySelectInfluencers(tier);
+  const maxManual = maxManualSelections(tier, campaign.units_count);
+  const selectedInProgress = applications.filter((a) => isSelectedProgress(a.status)).length;
+  const remainingManual = Math.max(0, maxManual - selectedInProgress);
+
+  const onSelect = async (applicationId: string) => {
+    if (!client) return;
+    if (!canManual) {
+      setError('Ręczna selekcja jest niedostępna w Twoim pakiecie lub abonament jest nieaktywny.');
+      return;
+    }
+    if (remainingManual <= 0) {
+      setError('Osiągnięto limit ręcznej selekcji w tym pakiecie dla tej kampanii.');
+      return;
+    }
+    setError(null);
+    const { error: upErr } = await client.rpc('brand_select_application', { application_id: applicationId });
+    if (upErr) setError(upErr.message);
+  };
+
+  const onMoveToShipping = async (applicationId: string) => {
+    if (!client) return;
+    if (!subscriptionActive) {
+      setError('Abonament nieaktywny.');
+      return;
+    }
+    setError(null);
+    const { error: upErr } = await client.rpc('brand_move_application_to_shipping', { application_id: applicationId });
+    if (upErr) setError(upErr.message);
+  };
 
   return (
     <div className="space-y-6">
@@ -290,7 +405,16 @@ export default function BrandCampaignDetailView({
 
       <section className="brand-glass p-5 sm:p-6">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-          <h2 className="brand-heading text-lg font-semibold text-white">Zgłoszenia influencerów</h2>
+          <div>
+            <h2 className="brand-heading text-lg font-semibold text-white">Zgłoszenia influencerów</h2>
+            <p className="mt-1 text-xs text-slate-400">
+              Pakiet: <span className="font-semibold text-slate-200">{tier.toUpperCase()}</span> · Ręczny wybór:{' '}
+              <span className="font-semibold text-slate-200">
+                {canManuallySelectInfluencers(tier) ? `${selectedInProgress}/${maxManual}` : 'Niedostępny'}
+              </span>
+            </p>
+            {!subscriptionActive ? <p className="mt-1 text-xs text-amber-200/90">Abonament nieaktywny</p> : null}
+          </div>
           <span className="rounded-full border border-emerald-300/25 bg-emerald-500/10 px-2.5 py-1 text-xs text-emerald-200">
             {applications.length} w sumie
           </span>
@@ -303,10 +427,17 @@ export default function BrandCampaignDetailView({
               <thead>
                 <tr className="border-white/10 text-slate-400">
                   <th className="bg-transparent">Uczestnik (ID)</th>
+                  {showReach ? (
+                    <>
+                      <th className="bg-transparent">Followers</th>
+                      <th className="bg-transparent">ER</th>
+                    </>
+                  ) : null}
                   <th className="bg-transparent">Status</th>
                   <th className="bg-transparent">Zgłoszono</th>
                   <th className="bg-transparent">Deadline</th>
                   <th className="bg-transparent">Publikacja</th>
+                  <th className="bg-transparent text-right">Akcje</th>
                 </tr>
               </thead>
               <tbody>
@@ -315,6 +446,12 @@ export default function BrandCampaignDetailView({
                     <td className="font-mono text-xs text-slate-300" title={a.influencer_id}>
                       {shortId(a.influencer_id)}
                     </td>
+                    {showReach ? (
+                      <>
+                        <td className="text-slate-300">{a.followers ?? '—'}</td>
+                        <td className="text-slate-300">{a.er ?? '—'}</td>
+                      </>
+                    ) : null}
                     <td className="text-slate-200">{APP_STATUS_LABEL[a.status] ?? a.status}</td>
                     <td className="text-slate-400">{formatPlDateTime(a.created_at)}</td>
                     <td className="text-slate-400">{a.deadline ? formatPlDateTime(a.deadline) : '—'}</td>
@@ -332,10 +469,48 @@ export default function BrandCampaignDetailView({
                         '—'
                       )}
                     </td>
+                    <td className="text-right">
+                      {a.status === 'applied' ? (
+                        <button
+                          type="button"
+                          className="brand-cta-outline text-xs"
+                          onClick={() => onSelect(a.id)}
+                          disabled={!canManual || remainingManual <= 0}
+                          title={
+                            !subscriptionActive
+                              ? 'Abonament nieaktywny'
+                              : !canManuallySelectInfluencers(tier)
+                                ? 'Ręczna selekcja niedostępna w pakiecie Basic'
+                                : remainingManual <= 0
+                                  ? 'Osiągnięto limit ręcznych wyborów'
+                                  : 'Dodaj do shortlisty'
+                          }
+                        >
+                          Wybierz
+                        </button>
+                      ) : a.status === 'selected' ? (
+                        <button
+                          type="button"
+                          className="brand-cta text-xs"
+                          onClick={() => onMoveToShipping(a.id)}
+                          disabled={!subscriptionActive}
+                          title={!subscriptionActive ? 'Abonament nieaktywny' : 'Przejdź do przygotowania wysyłki'}
+                        >
+                          Do wysyłki
+                        </button>
+                      ) : (
+                        <span className="text-xs text-slate-500">—</span>
+                      )}
+                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
+            {!showReach ? (
+              <p className="mt-3 text-xs text-slate-500">
+                W pakiecie Basic podgląd metryk (followers/ER) jest niedostępny przed decyzją.
+              </p>
+            ) : null}
           </div>
         )}
       </section>

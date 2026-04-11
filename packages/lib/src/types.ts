@@ -106,3 +106,15 @@ export const INFLUENCER_DETAIL_LEVEL_BY_TIER: Record<SubscriptionTier, Influence
   medium: 'basic_reach',
   platinum: 'full',
 };
+
+export function canManuallySelectInfluencers(tier: SubscriptionTier): boolean {
+  return INFLUENCER_SELECTION_BY_TIER[tier] !== 'ai_only';
+}
+
+export function maxManualSelections(tier: SubscriptionTier, unitsCount: number): number {
+  const n = Math.max(0, Math.floor(Number.isFinite(unitsCount) ? unitsCount : 0));
+  const mode = INFLUENCER_SELECTION_BY_TIER[tier];
+  if (mode === 'ai_only') return 0;
+  if (mode === 'hybrid_half') return Math.floor(n / 2);
+  return n;
+}

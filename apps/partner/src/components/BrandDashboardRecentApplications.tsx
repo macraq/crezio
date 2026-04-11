@@ -134,7 +134,7 @@ export default function BrandDashboardRecentApplications({
     let metrics = new Map<string, { followers_count: number | null; engagement_rate: number | null }>();
     if (infIds.length > 0) {
       const { data: ipRows } = await client
-        .from('influencer_profiles')
+        .from('influencer_profiles_public')
         .select('profile_id,followers_count,engagement_rate')
         .in('profile_id', infIds);
       metrics = new Map(
