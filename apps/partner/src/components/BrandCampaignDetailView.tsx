@@ -7,6 +7,8 @@ import {
   maxManualSelections,
   type SubscriptionTier,
 } from '@influeapp/lib';
+import CollapsibleClamp from './CollapsibleClamp';
+import TierBlockedWybierzButton from './TierBlockedWybierzButton';
 
 type CampaignStatus = 'draft' | 'active' | 'applications_closed' | 'ended';
 
@@ -14,6 +16,8 @@ type CampaignDetail = {
   id: string;
   name: string;
   description: string | null;
+  presentation_inspiration: string | null;
+  target_tester_description: string | null;
   units_count: number;
   content_type: string;
   category: string | null;
@@ -160,7 +164,7 @@ export default function BrandCampaignDetailView({
     const { data: camp, error: campError } = await client
       .from('campaigns')
       .select(
-        'id,name,description,units_count,content_type,category,start_date,end_applications_date,end_date,status,auto_status_change,created_at,updated_at'
+        'id,name,description,presentation_inspiration,target_tester_description,units_count,content_type,category,start_date,end_applications_date,end_date,status,auto_status_change,created_at,updated_at'
       )
       .eq('id', id)
       .maybeSingle();
@@ -299,6 +303,7 @@ export default function BrandCampaignDetailView({
   const detailLevel = INFLUENCER_DETAIL_LEVEL_BY_TIER[tier] ?? 'none';
   const showReach = detailLevel !== 'none';
   const canManual = subscriptionActive && canManuallySelectInfluencers(tier);
+  const manualBlockedByTier = !canManuallySelectInfluencers(tier);
   const maxManual = maxManualSelections(tier, campaign.units_count);
   const selectedInProgress = applications.filter((a) => isSelectedProgress(a.status)).length;
   const remainingManual = Math.max(0, maxManual - selectedInProgress);
@@ -366,12 +371,57 @@ export default function BrandCampaignDetailView({
       <section className="brand-glass p-5 sm:p-6">
         <h2 className="brand-heading text-lg font-semibold text-white">Opis</h2>
         {campaign.description ? (
-          <div
-            className="mt-4 max-w-none text-sm leading-relaxed text-slate-300 [&_a]:text-emerald-300 [&_p]:my-2 [&_ul]:my-2 [&_ul]:list-disc [&_ul]:pl-5"
-            dangerouslySetInnerHTML={{ __html: campaign.description }}
+          <CollapsibleClamp
+            variant="html"
+            html={campaign.description}
+            lines={4}
+            contentClassName="max-w-none text-sm leading-relaxed text-slate-300 [&_a]:text-emerald-300 [&_p]:my-2 [&_ul]:my-2 [&_ul]:list-disc [&_ul]:pl-5"
           />
         ) : (
           <p className="mt-3 text-sm text-slate-500">Brak opisu.</p>
+        )}
+      </section>
+
+      <section className="brand-glass p-5 sm:p-6">
+        <h2 className="brand-heading text-lg font-semibold text-white">Inspiracje na prezentację (widok testerów)</h2>
+        <p className="mt-1 text-xs text-slate-500">
+          To samo zobaczą uczestnicy na stronie kampanii — opcjonalne podpowiedzi, nie wymóg określonej formy treści.
+        </p>
+        {campaign.presentation_inspiration?.trim() ? (
+          <CollapsibleClamp
+            variant="text"
+            text={campaign.presentation_inspiration}
+            lines={4}
+            contentClassName="text-sm leading-relaxed text-slate-300"
+          />
+        ) : (
+          <p className="mt-3 text-sm text-slate-500">
+            Nie uzupełniono — możesz dodać treść w{' '}
+            <a href={`/campaigns/edit?id=${encodeURIComponent(campaign.id)}`} className="text-emerald-300 underline hover:text-emerald-200">
+              edycji kampanii
+            </a>
+            .
+          </p>
+        )}
+      </section>
+
+      <section className="brand-glass p-5 sm:p-6">
+        <h2 className="brand-heading text-lg font-semibold text-white">Oczekiwania co do uczestników (AI)</h2>
+        {campaign.target_tester_description?.trim() ? (
+          <CollapsibleClamp
+            variant="text"
+            text={campaign.target_tester_description}
+            lines={4}
+            contentClassName="text-sm leading-relaxed text-slate-300"
+          />
+        ) : (
+          <p className="mt-3 text-sm text-slate-500">
+            Nie uzupełniono — możesz dodać opis w{' '}
+            <a href={`/campaigns/edit?id=${encodeURIComponent(campaign.id)}`} className="text-emerald-300 underline hover:text-emerald-200">
+              edycji kampanii
+            </a>
+            .
+          </p>
         )}
       </section>
 
@@ -471,23 +521,25 @@ export default function BrandCampaignDetailView({
                     </td>
                     <td className="text-right">
                       {a.status === 'applied' ? (
-                        <button
-                          type="button"
-                          className="brand-cta-outline text-xs"
-                          onClick={() => onSelect(a.id)}
-                          disabled={!canManual || remainingManual <= 0}
-                          title={
-                            !subscriptionActive
-                              ? 'Abonament nieaktywny'
-                              : !canManuallySelectInfluencers(tier)
-                                ? 'Ręczna selekcja niedostępna w pakiecie Basic'
+                        manualBlockedByTier ? (
+                          <TierBlockedWybierzButton applicationId={a.id} resetKey={resolvedId ?? ''} />
+                        ) : (
+                          <button
+                            type="button"
+                            className="brand-cta-outline text-xs"
+                            onClick={() => onSelect(a.id)}
+                            disabled={!canManual || remainingManual <= 0}
+                            title={
+                              !subscriptionActive
+                                ? 'Abonament nieaktywny'
                                 : remainingManual <= 0
                                   ? 'Osiągnięto limit ręcznych wyborów'
                                   : 'Dodaj do shortlisty'
-                          }
-                        >
-                          Wybierz
-                        </button>
+                            }
+                          >
+                            Wybierz
+                          </button>
+                        )
                       ) : a.status === 'selected' ? (
                         <button
                           type="button"

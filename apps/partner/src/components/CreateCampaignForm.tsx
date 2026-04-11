@@ -53,6 +53,8 @@ export default function CreateCampaignForm({ supabaseUrl, supabaseAnonKey, editM
   const [autoStatusChange, setAutoStatusChange] = useState(true);
   const [contentType, setContentType] = useState('barter');
   const [campaignStatus, setCampaignStatus] = useState<CampaignStatus>('draft');
+  const [targetTesterDescription, setTargetTesterDescription] = useState('');
+  const [presentationInspiration, setPresentationInspiration] = useState('');
 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [loadingCampaign, setLoadingCampaign] = useState(false);
@@ -168,7 +170,7 @@ export default function CreateCampaignForm({ supabaseUrl, supabaseAnonKey, editM
       const { data, error } = await sb
         .from('campaigns')
         .select(
-          'id,name,description,units_count,content_type,category,start_date,end_applications_date,end_date,auto_status_change,status'
+          'id,name,description,units_count,content_type,category,start_date,end_applications_date,end_date,auto_status_change,status,target_tester_description,presentation_inspiration'
         )
         .eq('id', id)
         .eq('brand_id', brandId)
@@ -197,6 +199,12 @@ export default function CreateCampaignForm({ supabaseUrl, supabaseAnonKey, editM
       setAutoStatusChange(Boolean(row.auto_status_change));
       setContentType(String(row.content_type ?? 'barter'));
       setCampaignStatus(normalizeCampaignStatus(row.status));
+      setTargetTesterDescription(
+        row.target_tester_description == null ? '' : String(row.target_tester_description)
+      );
+      setPresentationInspiration(
+        row.presentation_inspiration == null ? '' : String(row.presentation_inspiration)
+      );
       setLoadingCampaign(false);
     }
 
@@ -268,6 +276,8 @@ export default function CreateCampaignForm({ supabaseUrl, supabaseAnonKey, editM
         .update({
           name: name.trim(),
           description: mergedDescription,
+          target_tester_description: targetTesterDescription.trim() || null,
+          presentation_inspiration: presentationInspiration.trim() || null,
           units_count: unitsCount,
           content_type: contentType || 'barter',
           category: category.trim() || null,
@@ -302,6 +312,8 @@ export default function CreateCampaignForm({ supabaseUrl, supabaseAnonKey, editM
       brand_id: brand.id,
       name: name.trim(),
       description: mergedDescription,
+      target_tester_description: targetTesterDescription.trim() || null,
+      presentation_inspiration: presentationInspiration.trim() || null,
       units_count: unitsCount,
       content_type: 'barter',
       category: category.trim() || null,
@@ -447,6 +459,35 @@ export default function CreateCampaignForm({ supabaseUrl, supabaseAnonKey, editM
             onChange={setDescription}
             placeholder="Szczegółowy opis: brief, oczekiwania, format publikacji, cele i warunki testu"
           />
+        </label>
+
+        <label className="sm:col-span-2 flex flex-col gap-1.5">
+          <span className="text-sm text-slate-300">Inspiracje na prezentację produktu (widoczne dla testerów)</span>
+          <textarea
+            className="min-h-24 w-full rounded-xl border border-white/15 bg-slate-900/70 px-3 py-2.5 text-sm text-white outline-none transition focus:border-emerald-300/70 focus:ring-2 focus:ring-emerald-300/20"
+            value={presentationInspiration}
+            onChange={(e) => setPresentationInspiration(e.target.value)}
+            placeholder="Np. porównanie przed/po myciu, pokazanie konsystencji w kadrze z bliska, rutyna wieczorna z produktem w roli głównej — to tylko przykłady."
+          />
+          <span className="text-xs text-slate-500">
+            Opcjonalne podpowiedzi: nie wymuszają konkretnej formy treści. Testerzy często mają własne pomysły, o których
+            marka nie pomyślała — to pole ma głównie pomóc osobom, które szukają inspiracji przy danym produkcie.
+            Treść zobaczą uczestnicy na stronie kampanii.
+          </span>
+        </label>
+
+        <label className="sm:col-span-2 flex flex-col gap-1.5">
+          <span className="text-sm text-slate-300">Oczekiwania co do uczestników (dopasowanie AI)</span>
+          <textarea
+            className="min-h-24 w-full rounded-xl border border-white/15 bg-slate-900/70 px-3 py-2.5 text-sm text-white outline-none transition focus:border-emerald-300/70 focus:ring-2 focus:ring-emerald-300/20"
+            value={targetTesterDescription}
+            onChange={(e) => setTargetTesterDescription(e.target.value)}
+            placeholder="Np. szukamy osób regularnie farbujących włosy, aby móc ocenić szampon do włosów koloryzowanych; lub testerów z cerą mieszaną przy serum matującym."
+          />
+          <span className="text-xs text-slate-500">
+            Opisz, jakich testerów potrzebujesz, żeby skuteczność produktu dało się wiarygodnie ocenić. Tekst będzie
+            wykorzystywany przy analizie AI i dopasowywaniu profili — nie zastępuje briefu ani zasad publikacji.
+          </span>
         </label>
 
         <label className="flex flex-col gap-1.5">

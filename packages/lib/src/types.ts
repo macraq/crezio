@@ -64,6 +64,10 @@ export interface Campaign {
   brand_id: string;
   name: string;
   description: string | null;
+  /** Kogo marka szuka w teście (np. osoby farbujące włosy) — dopasowanie AI / analiza. */
+  target_tester_description: string | null;
+  /** Podpowiedzi dla testerów jak pokazać produkt (widoczne publicznie); opcjonalne inspiracje. */
+  presentation_inspiration: string | null;
   units_count: number;
   content_type: string;
   category: string | null;

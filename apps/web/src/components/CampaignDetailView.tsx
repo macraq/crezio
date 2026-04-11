@@ -6,6 +6,7 @@ type CampaignDetail = {
   id: string;
   name: string;
   description: string | null;
+  presentation_inspiration: string | null;
   units_count: number;
   content_type: string;
   category: string | null;
@@ -80,7 +81,7 @@ export default function CampaignDetailView({ campaignId, supabaseUrl, supabaseAn
     const { data, error } = await client
       .from('campaigns')
       .select(
-        'id,name,description,units_count,content_type,category,start_date,end_applications_date,end_date,status,auto_status_change,brands(name)'
+        'id,name,description,presentation_inspiration,units_count,content_type,category,start_date,end_applications_date,end_date,status,auto_status_change,brands(name)'
       )
       .eq('id', id)
       .maybeSingle();
@@ -245,6 +246,18 @@ export default function CampaignDetailView({ campaignId, supabaseUrl, supabaseAn
       ) : (
         <p className="text-sm text-base-content/60">Brak opisu od marki.</p>
       )}
+
+      {campaign.presentation_inspiration?.trim() ? (
+        <section className="rounded-2xl border border-base-content/10 bg-base-100/40 p-6">
+          <h2 className="text-lg font-semibold">Inspiracje na prezentację produktu</h2>
+          <p className="mt-1 text-sm text-base-content/60">
+            Poniżej kilka propozycji od marki — możesz je zignorować i zaplanować treść po swojemu, jeśli masz lepszy pomysł.
+          </p>
+          <p className="mt-4 whitespace-pre-wrap text-sm leading-relaxed text-base-content/90">
+            {campaign.presentation_inspiration}
+          </p>
+        </section>
+      ) : null}
 
       <section className="rounded-2xl border border-base-content/10 bg-base-100/40 p-6">
         <h2 className="text-lg font-semibold">Terminy i zasady</h2>
