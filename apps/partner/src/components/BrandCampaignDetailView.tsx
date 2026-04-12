@@ -46,6 +46,16 @@ type ApplicationRow = {
   er?: string;
 };
 
+type TestReviewRow = {
+  influencer_id: string;
+  rating: number;
+  review: string | null;
+  social_post_urls: string[];
+  updated_at: string;
+};
+
+type SubmissionsTabId = 'all' | 'selected_for_test' | 'reviews';
+
 const STATUS_LABEL: Record<CampaignStatus, string> = {
   draft: 'Szkic',
   active: 'Aktywna',
@@ -77,6 +87,21 @@ function formatPlDateTime(iso: string): string {
 
 function shortId(id: string): string {
   return id.length > 12 ? `${id.slice(0, 8)}…` : id;
+}
+
+function StarRow({ rating }: { rating: number }) {
+  const r = Math.min(5, Math.max(1, Math.round(Number(rating)) || 1));
+  return (
+    <span className="inline-flex items-center gap-1.5" title={`Ocena ${r}/5`}>
+      <span className="text-amber-300/95" aria-hidden>
+        {'★'.repeat(r)}
+      </span>
+      <span className="text-slate-600" aria-hidden>
+        {'☆'.repeat(5 - r)}
+      </span>
+      <span className="text-xs text-slate-400">{r}/5</span>
+    </span>
+  );
 }
 
 function formatFollowers(n: number | null | undefined): string {
@@ -116,6 +141,9 @@ export default function BrandCampaignDetailView({
   const [error, setError] = useState<string | null>(null);
   const [campaign, setCampaign] = useState<CampaignDetail | null>(null);
   const [applications, setApplications] = useState<ApplicationRow[]>([]);
+  const [testReviews, setTestReviews] = useState<TestReviewRow[]>([]);
+  const [reviewsLoadError, setReviewsLoadError] = useState<string | null>(null);
+  const [submissionsTab, setSubmissionsTab] = useState<SubmissionsTabId>('all');
   const [tier, setTier] = useState<SubscriptionTier>('basic');
   const [subscriptionActive, setSubscriptionActive] = useState(false);
 
@@ -129,6 +157,10 @@ export default function BrandCampaignDetailView({
     }
     setIdReady(true);
   }, [campaignId]);
+
+  useEffect(() => {
+    setSubmissionsTab('all');
+  }, [resolvedId]);
 
   const load = useCallback(async (client: SupabaseClient, id: string) => {
     setError(null);
@@ -178,6 +210,8 @@ export default function BrandCampaignDetailView({
       setError(campError.message);
       setCampaign(null);
       setApplications([]);
+      setTestReviews([]);
+      setReviewsLoadError(null);
       setLoading(false);
       return;
     }
@@ -186,19 +220,52 @@ export default function BrandCampaignDetailView({
       setError('Nie znaleziono kampanii lub nie masz do niej dostępu.');
       setCampaign(null);
       setApplications([]);
+      setTestReviews([]);
+      setReviewsLoadError(null);
       setLoading(false);
       return;
     }
 
     setCampaign(camp as CampaignDetail);
+    setReviewsLoadError(null);
 
-    const { data: apps, error: appsError } = await client
-      .from('campaign_applications')
-      .select(
-        'id,status,deadline,publication_link,created_at,influencer_id,dedicated_self_description,pitch_text_at_submit'
-      )
-      .eq('campaign_id', id)
-      .order('created_at', { ascending: false });
+    const [{ data: apps, error: appsError }, reviewsResult] = await Promise.all([
+      client
+        .from('campaign_applications')
+        .select(
+          'id,status,deadline,publication_link,created_at,influencer_id,dedicated_self_description,pitch_text_at_submit'
+        )
+        .eq('campaign_id', id)
+        .order('created_at', { ascending: false }),
+      client
+        .from('campaign_influencer_test_reviews')
+        .select('influencer_id,rating,review,social_post_urls,updated_at')
+        .eq('campaign_id', id)
+        .order('updated_at', { ascending: false }),
+    ]);
+
+    if (reviewsResult.error) {
+      setTestReviews([]);
+      setReviewsLoadError(reviewsResult.error.message);
+    } else {
+      const raw = (reviewsResult.data ?? []) as Array<{
+        influencer_id: string;
+        rating: number;
+        review: string | null;
+        social_post_urls?: string[] | null;
+        updated_at: string;
+      }>;
+      setTestReviews(
+        raw.map((r) => ({
+          influencer_id: r.influencer_id,
+          rating: r.rating,
+          review: r.review,
+          social_post_urls: Array.isArray(r.social_post_urls) ? r.social_post_urls : [],
+          updated_at: r.updated_at,
+        }))
+      );
+      setReviewsLoadError(null);
+    }
 
     if (appsError) {
       setError(appsError.message);
@@ -270,6 +337,8 @@ export default function BrandCampaignDetailView({
       setError('Brak identyfikatora kampanii. Użyj adresu /campaigns/view?id=… (np. z dashboardu).');
       setCampaign(null);
       setApplications([]);
+      setTestReviews([]);
+      setReviewsLoadError(null);
       return;
     }
 
@@ -323,6 +392,7 @@ export default function BrandCampaignDetailView({
   const maxManual = maxManualSelections(tier, campaign.units_count);
   const selectedInProgress = applications.filter((a) => isSelectedProgress(a.status)).length;
   const remainingManual = Math.max(0, maxManual - selectedInProgress);
+  const selectedForTesting = applications.filter((a) => isSelectedProgress(a.status));
 
   const onSelect = async (applicationId: string) => {
     if (!client) return;
@@ -337,6 +407,7 @@ export default function BrandCampaignDetailView({
     setError(null);
     const { error: upErr } = await client.rpc('brand_select_application', { application_id: applicationId });
     if (upErr) setError(upErr.message);
+    else if (resolvedId) void load(client, resolvedId);
   };
 
   const onMoveToShipping = async (applicationId: string) => {
@@ -348,7 +419,134 @@ export default function BrandCampaignDetailView({
     setError(null);
     const { error: upErr } = await client.rpc('brand_move_application_to_shipping', { application_id: applicationId });
     if (upErr) setError(upErr.message);
+    else if (resolvedId) void load(client, resolvedId);
   };
+
+  const tabButtonClass = (id: SubmissionsTabId) =>
+    `rounded-t-lg px-3 py-2 text-sm font-medium transition-colors sm:px-4 ${
+      submissionsTab === id
+        ? 'border-b-2 border-emerald-400 text-white'
+        : 'border-b-2 border-transparent text-slate-400 hover:text-slate-200'
+    }`;
+
+  const renderApplicationsTable = (rows: ApplicationRow[]) => (
+    <div className="overflow-x-auto">
+      <table className="table table-sm">
+        <thead>
+          <tr className="border-white/10 text-slate-400">
+            <th className="bg-transparent">Uczestnik (ID)</th>
+            {showReach ? (
+              <>
+                <th className="bg-transparent">Followers</th>
+                <th className="bg-transparent">ER</th>
+              </>
+            ) : null}
+            <th className="bg-transparent">Status</th>
+            <th className="bg-transparent max-w-[220px]">Opis zgłoszenia</th>
+            <th className="bg-transparent">Zgłoszono</th>
+            <th className="bg-transparent">Deadline</th>
+            <th className="bg-transparent">Publikacja</th>
+            <th className="bg-transparent text-right">Akcje</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((a) => (
+            <tr key={a.id} className="border-white/10">
+              <td className="font-mono text-xs text-slate-300" title={a.influencer_id}>
+                {shortId(a.influencer_id)}
+              </td>
+              {showReach ? (
+                <>
+                  <td className="text-slate-300">{a.followers ?? '—'}</td>
+                  <td className="text-slate-300">{a.er ?? '—'}</td>
+                </>
+              ) : null}
+              <td className="text-slate-200">{APP_STATUS_LABEL[a.status] ?? a.status}</td>
+              <td className="max-w-[220px] align-top text-slate-300">
+                {a.resolvedPitch ? (
+                  <div className="space-y-1">
+                    <span
+                      className={`badge badge-xs ${
+                        a.pitchSource === 'dedicated'
+                          ? 'border-emerald-400/40 bg-emerald-500/15 text-emerald-100'
+                          : 'border-white/15 bg-white/5 text-slate-300'
+                      }`}
+                    >
+                      {a.pitchSource === 'dedicated' ? 'Dedykowany' : 'Z profilu'}
+                    </span>
+                    <CollapsibleClamp
+                      variant="text"
+                      text={a.resolvedPitch}
+                      lines={2}
+                      contentClassName="text-xs leading-relaxed text-slate-300"
+                    />
+                  </div>
+                ) : (
+                  <span className="text-slate-500">—</span>
+                )}
+              </td>
+              <td className="text-slate-400">{formatPlDateTime(a.created_at)}</td>
+              <td className="text-slate-400">{a.deadline ? formatPlDateTime(a.deadline) : '—'}</td>
+              <td className="max-w-[180px] truncate">
+                {a.publication_link ? (
+                  <a
+                    href={a.publication_link}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-emerald-300 underline hover:text-emerald-200"
+                  >
+                    link
+                  </a>
+                ) : (
+                  '—'
+                )}
+              </td>
+              <td className="text-right">
+                {a.status === 'applied' ? (
+                  manualBlockedByTier ? (
+                    <TierBlockedWybierzButton applicationId={a.id} resetKey={resolvedId ?? ''} />
+                  ) : (
+                    <button
+                      type="button"
+                      className="brand-cta-outline text-xs"
+                      onClick={() => onSelect(a.id)}
+                      disabled={!canManual || remainingManual <= 0}
+                      title={
+                        !subscriptionActive
+                          ? 'Abonament nieaktywny'
+                          : remainingManual <= 0
+                            ? 'Osiągnięto limit ręcznych wyborów'
+                            : 'Dodaj do shortlisty'
+                      }
+                    >
+                      Wybierz
+                    </button>
+                  )
+                ) : a.status === 'selected' ? (
+                  <button
+                    type="button"
+                    className="brand-cta text-xs"
+                    onClick={() => onMoveToShipping(a.id)}
+                    disabled={!subscriptionActive}
+                    title={!subscriptionActive ? 'Abonament nieaktywny' : 'Przejdź do przygotowania wysyłki'}
+                  >
+                    Do wysyłki
+                  </button>
+                ) : (
+                  <span className="text-xs text-slate-500">—</span>
+                )}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      {!showReach ? (
+        <p className="mt-3 text-xs text-slate-500">
+          W pakiecie Basic podgląd metryk (followers/ER) jest niedostępny przed decyzją.
+        </p>
+      ) : null}
+    </div>
+  );
 
   return (
     <div className="space-y-6">
@@ -485,123 +683,91 @@ export default function BrandCampaignDetailView({
             {applications.length} w sumie
           </span>
         </div>
-        {applications.length === 0 ? (
-          <p className="text-sm text-slate-500">Brak zgłoszeń do tej kampanii.</p>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="table table-sm">
-              <thead>
-                <tr className="border-white/10 text-slate-400">
-                  <th className="bg-transparent">Uczestnik (ID)</th>
-                  {showReach ? (
-                    <>
-                      <th className="bg-transparent">Followers</th>
-                      <th className="bg-transparent">ER</th>
-                    </>
+
+        <div className="mb-4 flex flex-wrap gap-1 border-b border-white/10">
+          <button type="button" className={tabButtonClass('all')} onClick={() => setSubmissionsTab('all')}>
+            Wszystkie ({applications.length})
+          </button>
+          <button
+            type="button"
+            className={tabButtonClass('selected_for_test')}
+            onClick={() => setSubmissionsTab('selected_for_test')}
+          >
+            Wybrani do testowania ({selectedForTesting.length})
+          </button>
+          <button type="button" className={tabButtonClass('reviews')} onClick={() => setSubmissionsTab('reviews')}>
+            Opinie z testów ({testReviews.length})
+          </button>
+        </div>
+
+        {submissionsTab === 'reviews' ? (
+          reviewsLoadError ? (
+            <div className="rounded-lg border border-rose-400/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-100">
+              Nie udało się wczytać opinii: {reviewsLoadError}
+            </div>
+          ) : testReviews.length === 0 ? (
+            <p className="text-sm text-slate-500">
+              Żaden tester nie wystawił jeszcze opinii (ocena i opis po zakończeniu testu pojawią się tutaj).
+            </p>
+          ) : (
+            <ul className="space-y-4">
+              {testReviews.map((rev) => (
+                <li
+                  key={rev.influencer_id}
+                  className="rounded-xl border border-white/10 bg-white/[0.03] p-4 sm:p-5"
+                >
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <p className="text-xs uppercase tracking-wide text-slate-500">Uczestnik (ID)</p>
+                      <p className="font-mono text-sm text-slate-200" title={rev.influencer_id}>
+                        {shortId(rev.influencer_id)}
+                      </p>
+                    </div>
+                    <StarRow rating={rev.rating} />
+                  </div>
+                  {rev.review?.trim() ? (
+                    <div className="mt-3">
+                      <p className="text-xs uppercase tracking-wide text-slate-500">Opinia</p>
+                      <CollapsibleClamp
+                        variant="text"
+                        text={rev.review}
+                        lines={4}
+                        contentClassName="mt-1 text-sm leading-relaxed text-slate-300"
+                      />
+                    </div>
+                  ) : (
+                    <p className="mt-3 text-sm text-slate-500">Bez tekstowej opinii (tylko ocena).</p>
+                  )}
+                  {rev.social_post_urls.length > 0 ? (
+                    <div className="mt-3">
+                      <p className="text-xs uppercase tracking-wide text-slate-500">Posty (social)</p>
+                      <ul className="mt-1 space-y-1">
+                        {rev.social_post_urls.map((url, i) => (
+                          <li key={`${rev.influencer_id}-link-${i}`}>
+                            <a
+                              href={url}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="break-all text-sm text-emerald-300 underline hover:text-emerald-200"
+                            >
+                              {url}
+                            </a>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
                   ) : null}
-                  <th className="bg-transparent">Status</th>
-                  <th className="bg-transparent max-w-[220px]">Opis zgłoszenia</th>
-                  <th className="bg-transparent">Zgłoszono</th>
-                  <th className="bg-transparent">Deadline</th>
-                  <th className="bg-transparent">Publikacja</th>
-                  <th className="bg-transparent text-right">Akcje</th>
-                </tr>
-              </thead>
-              <tbody>
-                {applications.map((a) => (
-                  <tr key={a.id} className="border-white/10">
-                    <td className="font-mono text-xs text-slate-300" title={a.influencer_id}>
-                      {shortId(a.influencer_id)}
-                    </td>
-                    {showReach ? (
-                      <>
-                        <td className="text-slate-300">{a.followers ?? '—'}</td>
-                        <td className="text-slate-300">{a.er ?? '—'}</td>
-                      </>
-                    ) : null}
-                    <td className="text-slate-200">{APP_STATUS_LABEL[a.status] ?? a.status}</td>
-                    <td className="max-w-[220px] align-top text-slate-300">
-                      {a.resolvedPitch ? (
-                        <div className="space-y-1">
-                          <span
-                            className={`badge badge-xs ${
-                              a.pitchSource === 'dedicated' ? 'border-emerald-400/40 bg-emerald-500/15 text-emerald-100' : 'border-white/15 bg-white/5 text-slate-300'
-                            }`}
-                          >
-                            {a.pitchSource === 'dedicated' ? 'Dedykowany' : 'Z profilu'}
-                          </span>
-                          <CollapsibleClamp
-                            variant="text"
-                            text={a.resolvedPitch}
-                            lines={2}
-                            contentClassName="text-xs leading-relaxed text-slate-300"
-                          />
-                        </div>
-                      ) : (
-                        <span className="text-slate-500">—</span>
-                      )}
-                    </td>
-                    <td className="text-slate-400">{formatPlDateTime(a.created_at)}</td>
-                    <td className="text-slate-400">{a.deadline ? formatPlDateTime(a.deadline) : '—'}</td>
-                    <td className="max-w-[180px] truncate">
-                      {a.publication_link ? (
-                        <a
-                          href={a.publication_link}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="text-emerald-300 underline hover:text-emerald-200"
-                        >
-                          link
-                        </a>
-                      ) : (
-                        '—'
-                      )}
-                    </td>
-                    <td className="text-right">
-                      {a.status === 'applied' ? (
-                        manualBlockedByTier ? (
-                          <TierBlockedWybierzButton applicationId={a.id} resetKey={resolvedId ?? ''} />
-                        ) : (
-                          <button
-                            type="button"
-                            className="brand-cta-outline text-xs"
-                            onClick={() => onSelect(a.id)}
-                            disabled={!canManual || remainingManual <= 0}
-                            title={
-                              !subscriptionActive
-                                ? 'Abonament nieaktywny'
-                                : remainingManual <= 0
-                                  ? 'Osiągnięto limit ręcznych wyborów'
-                                  : 'Dodaj do shortlisty'
-                            }
-                          >
-                            Wybierz
-                          </button>
-                        )
-                      ) : a.status === 'selected' ? (
-                        <button
-                          type="button"
-                          className="brand-cta text-xs"
-                          onClick={() => onMoveToShipping(a.id)}
-                          disabled={!subscriptionActive}
-                          title={!subscriptionActive ? 'Abonament nieaktywny' : 'Przejdź do przygotowania wysyłki'}
-                        >
-                          Do wysyłki
-                        </button>
-                      ) : (
-                        <span className="text-xs text-slate-500">—</span>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            {!showReach ? (
-              <p className="mt-3 text-xs text-slate-500">
-                W pakiecie Basic podgląd metryk (followers/ER) jest niedostępny przed decyzją.
-              </p>
-            ) : null}
-          </div>
+                  <p className="mt-3 text-xs text-slate-500">Ostatnia aktualizacja: {formatPlDateTime(rev.updated_at)}</p>
+                </li>
+              ))}
+            </ul>
+          )
+        ) : applications.length === 0 ? (
+          <p className="text-sm text-slate-500">Brak zgłoszeń do tej kampanii.</p>
+        ) : submissionsTab === 'selected_for_test' && selectedForTesting.length === 0 ? (
+          <p className="text-sm text-slate-500">Nikt nie został jeszcze wybrany do testowania (status „Zgłoszono”).</p>
+        ) : (
+          renderApplicationsTable(submissionsTab === 'all' ? applications : selectedForTesting)
         )}
       </section>
 

@@ -1,13 +1,26 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import type { SupabaseClient, User } from '@supabase/supabase-js';
 import CampaignApplySection from './CampaignApplySection';
+import CampaignInfluencerTestReview from './CampaignInfluencerTestReview';
+
+/** Jeden klient na parę URL+anon — wiele `createClient()` = wiele listenerów auth i lawina requestów. */
+const supabaseBrowserClients = new Map<string, SupabaseClient>();
+
+function getOrCreateSupabaseBrowserClient(url: string, anonKey: string): SupabaseClient {
+  const k = `${url}\0${anonKey}`;
+  let c = supabaseBrowserClients.get(k);
+  if (!c) {
+    c = createClient(url, anonKey);
+    supabaseBrowserClients.set(k, c);
+  }
+  return c;
+}
 
 type CampaignDetail = {
   id: string;
   name: string;
   description: string | null;
-  presentation_inspiration: string | null;
   units_count: number;
   content_type: string;
   category: string | null;
@@ -53,6 +66,18 @@ const STATUS_LABEL: Record<string, string> = {
   ended: 'Zakończona',
 };
 
+/** Statusy zgłoszenia po akceptacji przez markę — wtedy pokazujemy inspiracje do prezentacji. */
+const SELECTED_APPLICATION_STATUSES = new Set([
+  'selected',
+  'preparation_for_shipping',
+  'publication',
+  'completed',
+]);
+
+function isSelectedApplicant(status: string | null | undefined): boolean {
+  return !!status && SELECTED_APPLICATION_STATUSES.has(status);
+}
+
 export default function CampaignDetailView({ campaignId, supabaseUrl, supabaseAnonKey }: CampaignDetailViewProps) {
   const [resolvedId, setResolvedId] = useState<string | null>(null);
   const [idReady, setIdReady] = useState(false);
@@ -61,6 +86,8 @@ export default function CampaignDetailView({ campaignId, supabaseUrl, supabaseAn
   const [campaign, setCampaign] = useState<CampaignDetail | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [applied, setApplied] = useState(false);
+  const [applicationStatus, setApplicationStatus] = useState<string | null>(null);
+  const [presentationInspiration, setPresentationInspiration] = useState<string | null>(null);
 
   useEffect(() => {
     const fromProp = campaignId?.trim();
@@ -79,7 +106,7 @@ export default function CampaignDetailView({ campaignId, supabaseUrl, supabaseAn
     const { data, error } = await client
       .from('campaigns')
       .select(
-        'id,name,description,presentation_inspiration,units_count,content_type,category,start_date,end_applications_date,end_date,status,auto_status_change,brands(name)'
+        'id,name,description,units_count,content_type,category,start_date,end_applications_date,end_date,status,auto_status_change,brands(name)'
       )
       .eq('id', id)
       .maybeSingle();
@@ -87,6 +114,8 @@ export default function CampaignDetailView({ campaignId, supabaseUrl, supabaseAn
     if (error) {
       setLoadError(error.message);
       setCampaign(null);
+      setPresentationInspiration(null);
+      setApplicationStatus(null);
       setLoading(false);
       return;
     }
@@ -94,6 +123,8 @@ export default function CampaignDetailView({ campaignId, supabaseUrl, supabaseAn
     if (!data) {
       setLoadError('Nie znaleziono kampanii lub nie masz do niej dostępu.');
       setCampaign(null);
+      setPresentationInspiration(null);
+      setApplicationStatus(null);
       setLoading(false);
       return;
     }
@@ -103,17 +134,40 @@ export default function CampaignDetailView({ campaignId, supabaseUrl, supabaseAn
     if (uid) {
       const { data: app } = await client
         .from('campaign_applications')
-        .select('id')
+        .select('id,status')
         .eq('campaign_id', id)
         .eq('influencer_id', uid)
         .maybeSingle();
       setApplied(!!app);
+      const st = (app as { status?: string } | null)?.status ?? null;
+      setApplicationStatus(st);
+      if (isSelectedApplicant(st)) {
+        const { data: insp } = await client.rpc('get_presentation_inspiration_for_selected_influencer', {
+          p_campaign_id: id,
+        });
+        setPresentationInspiration(typeof insp === 'string' ? insp : null);
+      } else {
+        setPresentationInspiration(null);
+      }
     } else {
       setApplied(false);
+      setApplicationStatus(null);
+      setPresentationInspiration(null);
     }
 
     setLoading(false);
   }, []);
+
+  const loadRef = useRef(load);
+  loadRef.current = load;
+
+  const resolvedIdRef = useRef(resolvedId);
+  resolvedIdRef.current = resolvedId;
+
+  const supabase = useMemo(() => {
+    if (!supabaseUrl?.trim() || !supabaseAnonKey?.trim()) return null;
+    return getOrCreateSupabaseBrowserClient(supabaseUrl, supabaseAnonKey);
+  }, [supabaseUrl, supabaseAnonKey]);
 
   useEffect(() => {
     if (!idReady) return;
@@ -131,21 +185,40 @@ export default function CampaignDetailView({ campaignId, supabaseUrl, supabaseAn
       return;
     }
 
-    const supabase = createClient(supabaseUrl, supabaseAnonKey);
+    const client = getOrCreateSupabaseBrowserClient(supabaseUrl, supabaseAnonKey);
+
     setLoading(true);
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-      load(supabase, session?.user?.id, resolvedId);
-    });
+
+    // Nie umieszczaj `load` w deps — w dev (HMR) tożsamość useCallback potrafi się zmieniać i ponownie
+    // podpinać listener → tysiące identycznych requestów.
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_e, session) => {
+    } = client.auth.onAuthStateChange((event, session) => {
       setUser(session?.user ?? null);
-      setLoading(true);
-      load(supabase, session?.user?.id, resolvedId);
+      const cid = resolvedIdRef.current;
+      if (!cid) return;
+
+      const run = () => void loadRef.current(client, session?.user?.id, cid);
+
+      if (event === 'INITIAL_SESSION') {
+        run();
+        return;
+      }
+      if (event === 'TOKEN_REFRESHED') {
+        return;
+      }
+      if (
+        event === 'SIGNED_IN' ||
+        event === 'SIGNED_OUT' ||
+        event === 'USER_UPDATED' ||
+        event === 'PASSWORD_RECOVERY'
+      ) {
+        setLoading(true);
+        run();
+      }
     });
     return () => subscription.unsubscribe();
-  }, [idReady, resolvedId, supabaseUrl, supabaseAnonKey, load]);
+  }, [idReady, resolvedId, supabaseUrl, supabaseAnonKey]);
 
   const now = Date.now();
 
@@ -214,14 +287,14 @@ export default function CampaignDetailView({ campaignId, supabaseUrl, supabaseAn
         <p className="text-sm text-base-content/60">Brak opisu od marki.</p>
       )}
 
-      {campaign.presentation_inspiration?.trim() ? (
+      {presentationInspiration?.trim() ? (
         <section className="rounded-2xl border border-base-content/10 bg-base-100/40 p-6">
           <h2 className="text-lg font-semibold">Inspiracje na prezentację produktu</h2>
           <p className="mt-1 text-sm text-base-content/60">
             Poniżej kilka propozycji od marki — możesz je zignorować i zaplanować treść po swojemu, jeśli masz lepszy pomysł.
           </p>
           <p className="mt-4 whitespace-pre-wrap text-sm leading-relaxed text-base-content/90">
-            {campaign.presentation_inspiration}
+            {presentationInspiration}
           </p>
         </section>
       ) : null}
@@ -244,10 +317,6 @@ export default function CampaignDetailView({ campaignId, supabaseUrl, supabaseAn
           <div>
             <dt className="text-base-content/60">Liczba produktów / miejsc</dt>
             <dd className="font-medium">{campaign.units_count} szt.</dd>
-          </div>
-          <div className="sm:col-span-2">
-            <dt className="text-base-content/60">Automatyczna zmiana statusu</dt>
-            <dd className="font-medium">{campaign.auto_status_change ? 'Tak (wg dat)' : 'Nie'}</dd>
           </div>
         </dl>
       </section>
@@ -281,10 +350,11 @@ export default function CampaignDetailView({ campaignId, supabaseUrl, supabaseAn
             </a>
           </>
         ) : null}
-        <a href="/dashboard" className="btn btn-ghost btn-sm">
-          Panel
-        </a>
       </div>
+
+      {user && isSelectedApplicant(applicationStatus) && supabase ? (
+        <CampaignInfluencerTestReview supabase={supabase} user={user} campaignId={campaign.id} />
+      ) : null}
     </article>
   );
 }
